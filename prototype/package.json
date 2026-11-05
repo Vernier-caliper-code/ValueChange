@@ -1,0 +1,13 @@
+{
+  "name": "valuepass-prototype",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ValuePass 高保真交互原型",
+  "scripts": {
+    "dev": "node server.mjs",
+    "test": "npx playwright test tests/prototype.spec.mjs --reporter=line --workers=1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0"
+  }
+}

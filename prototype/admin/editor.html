@@ -1,0 +1,19 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>编辑文章｜ValuePass</title><link rel="icon" href="/assets/favicon.ico"><link rel="stylesheet" href="/assets/style.css"><link rel="stylesheet" href="/assets/admin.css"></head><body class="admin-body"><div class="admin-layout"><aside class="admin-sidebar"><a class="brand" href="/"><img src="/assets/icon.png" alt="ValuePass 标志"><span><span class="brand-name">Value<span>Pass</span></span><span class="brand-sub">CONTENT STUDIO</span></span></a><div class="admin-role">YOUR CREATIVE SPACE</div><nav class="admin-nav" aria-label="后台导航"><button class="active" type="button" onclick="location.href='/admin/dashboard.html'"><span class="nav-icon">≡</span>文章管理</button><button type="button" onclick="location.href='/admin/dashboard.html'"><span class="nav-icon">⌘</span>工具管理</button><button type="button" onclick="location.href='/admin/dashboard.html'"><span class="nav-icon">◇</span>商品管理</button><button type="button" onclick="location.href='/admin/dashboard.html'"><span class="nav-icon">☆</span>精选管理</button><button type="button" onclick="location.href='/admin/dashboard.html'"><span class="nav-icon">○</span>用户管理</button></nav><div class="admin-side-bottom"><a href="/">↗ 查看网站前台</a><br><br><a href="/admin/dashboard.html">← 返回内容列表</a></div></aside><main class="admin-main"><header class="admin-topbar"><h1>文章管理 / 编辑</h1><div class="admin-user"><span>站长 · 管理员</span><div class="admin-avatar">V</div></div></header><div class="admin-content"><div class="editor-header"><div><h2>写一篇新文章</h2><p>把一次实践，变成对别人也有用的经验。</p></div><div class="editor-actions"><button class="button secondary small" type="submit" form="editor-form" value="draft">保存草稿</button><button class="button small" type="submit" form="editor-form" value="publish">发布文章 <span class="arrow">↗</span></button></div></div><form id="editor-form"><div class="editor-panel" style="margin-bottom:20px"><div class="editor-meta"><div class="form-group"><label for="article-title">文章标题 <span class="blue">*</span></label><input class="form-control" id="article-title" value="从 0 到 1：一个 AI 全栈项目应该如何开始？" required></div><div class="form-group"><label for="article-category">所属板块 <span class="blue">*</span></label><select class="form-control" id="article-category"><option>AI 全栈</option><option>经验分享</option></select></div></div><div class="editor-meta" style="grid-template-columns:1fr 1fr"><div class="form-group"><label for="article-summary">文章摘要（选填）</label><input class="form-control" id="article-summary" placeholder="不填写则自动截取正文前 150 字"></div><div class="form-group"><label for="article-cover">封面图（选填）</label><div class="cover-upload"><input id="article-cover" type="file" accept="image/*" aria-label="上传文章封面图"></div></div></div></div><div class="editor-layout"><section class="editor-panel"><div class="editor-panel-head"><span>Markdown 正文</span><span id="word-count">0 字符</span></div><textarea class="form-control editor-input" id="markdown-input" aria-label="Markdown 文章正文" spellcheck="false"># 从 0 到 1：一个 AI 全栈项目应该如何开始？
+
+不从技术栈开始，而是从一个值得解决的小问题开始。
+
+## 先找到真实的问题
+
+“做一个 AI 助手”不是需求，它只是一个方向。更好的开始，是观察自己或身边的人，在哪些环节反复消耗时间。
+
+- 每周都要整理会议纪要
+- 需要在大量文档里反复查找答案
+- 写完代码后，总要重复整理变更说明
+
+## 先验证闭环，再选择技术
+
+**先让价值发生，再让系统变得复杂。**
+
+```text
+用户问题 → 找到相关资料 → 组织上下文 → 生成回答
+```</textarea></section><section class="editor-panel"><div class="editor-panel-head"><span>实时预览</span><span>PREVIEW</span></div><div class="markdown-preview" id="markdown-preview" aria-live="polite"></div></section></div><div class="editor-footer"><span>支持 Markdown 标题、列表、粗体、行内代码与代码块<br>封面图单张不超过 5MB；上传失败不丢失已填写内容</span><span id="editor-message" role="status">草稿未保存 · 原型演示</span></div></form><div class="editor-sidebar-note">原型说明：编辑与预览可实际操作；表单提交只展示发布流程，不连接数据库，也不会保存你的输入。</div></div></main></div><script src="/assets/admin.js"></script></body></html>

@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>ValuePass 原型页面地图</title>
+    <link rel="icon" href="/assets/favicon.ico" />
+    <style>
+      body {
+        margin: 0;
+        padding: 48px;
+        background: #f3f5f9;
+        color: #1c2c49;
+        font:
+          14px/1.8 Arial,
+          "Microsoft YaHei",
+          sans-serif;
+      }
+      main {
+        max-width: 960px;
+        margin: auto;
+      }
+      h1 {
+        font-size: 32px;
+        letter-spacing: -1px;
+      }
+      p {
+        color: #69788e;
+      }
+      section {
+        margin-top: 28px;
+        padding: 25px 30px;
+        background: #fff;
+        border: 1px solid #dfe5ee;
+        border-radius: 10px;
+      }
+      h2 {
+        margin: 0 0 14px;
+        font-size: 19px;
+      }
+      div {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 13px;
+      }
+      a {
+        display: block;
+        padding: 11px 14px;
+        border: 1px solid #dce3ef;
+        border-radius: 5px;
+        color: #2b5be4;
+        text-decoration: none;
+      }
+      a:hover {
+        background: #edf3ff;
+        border-color: #8cacf1;
+      }
+      small {
+        color: #8d99ab;
+      }
+      .note {
+        padding: 18px 0;
+        color: #7c899d;
+        font-size: 12px;
+      }
+      @media (max-width: 600px) {
+        body {
+          padding: 25px 18px;
+        }
+        div {
+          grid-template-columns: 1fr 1fr;
+        }
+        section {
+          padding: 22px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>ValuePass <span style="color: #2b5be4">原型地图</span></h1>
+      <p>高保真响应式交互原型 · 2026.11.05 · 所有内容与联系方式均为演示</p>
+      <section>
+        <h2>前台页面</h2>
+        <div>
+          <a href="/">首页 ↗</a><a href="/articles.html">AI 全栈列表 ↗</a
+          ><a href="/article.html">文章详情 ↗</a
+          ><a href="/tools.html">AI 工具列表 ↗</a
+          ><a href="/tool.html">工具详情 ↗</a
+          ><a href="/insights.html">经验分享 ↗</a
+          ><a href="/products.html">商品列表 ↗</a
+          ><a href="/product.html">商品详情与微信咨询 ↗</a
+          ><a href="/about.html">关于我 / 联系方式 ↗</a
+          ><a href="/auth.html">登录 / 注册 ↗</a
+          ><a href="/empty.html">空状态 ↗</a><a href="/404.html">404 状态 ↗</a>
+        </div>
+      </section>
+      <section>
+        <h2>后台页面</h2>
+        <div>
+          <a href="/admin/">管理员登录 ↗</a
+          ><a href="/admin/dashboard.html">内容与用户管理 ↗</a
+          ><a href="/admin/editor.html">Markdown 编辑器 ↗</a>
+        </div>
+      </section>
+      <section>
+        <h2>推荐验收路径</h2>
+        <p>
+          ① 首页 → AI 全栈 → 文章详情 → 目录跳转<br />② 首页 → AI 工具 →
+          工具详情 → 官网外链<br />③ 首页 → 商品 → 切换商品图片 →
+          微信咨询弹窗<br />④ 登录 / 注册切换 → 输入不一致密码 → 查看校验<br />⑤
+          后台管理 → 切换模块 / 筛选文章 / 勾选精选 → Markdown 编辑与预览
+        </p>
+      </section>
+      <div class="note">
+        视觉方向：克制的技术编辑风。Logo
+        蓝作为强调色，中文无衬线正文，等宽字体作为技术标记。<br />待真实素材：站长个人简介、真实文章与商品、微信号与二维码。未接入数据库、登录鉴权、统计或真实发布。
+      </div>
+    </main>
+  </body>
+</html>
