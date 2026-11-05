@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getAdminTools } from '@/lib/actions/tools';
 import { formatDate } from '@/lib/utils/date';
 import { buttonStyles } from '@/components/ui/button';
+import { ToolActions } from './tool-actions';
 
 export default async function StudioToolsPage() {
   const tools = await getAdminTools();
@@ -38,9 +39,7 @@ export default async function StudioToolsPage() {
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <Link href={`/studio/tools/${tool.id}`} className="text-[13px] text-brand hover:underline">
-                    编辑
-                  </Link>
+                  <ToolActions tool={tool} />
                 </td>
               </tr>
             ))}

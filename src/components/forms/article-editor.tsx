@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { createArticleAction, updateArticleAction } from '@/lib/actions/articles';
 import { MarkdownContent } from '@/components/content/markdown-content';
 import { buttonStyles } from '@/components/ui/button';
+import { ImageUpload } from './image-upload';
 
 type Article = {
   id?: string;
@@ -96,14 +97,14 @@ export function ArticleEditor({ article }: { article?: Article }) {
           />
         </div>
         <div>
-          <label className="mb-2 block text-[14px] font-medium">封面图 URL（可选）</label>
-          <input
-            type="url"
-            value={coverUrl}
-            onChange={(e) => setCoverUrl(e.target.value)}
-            placeholder="https://... 或 /images/..."
-            className="h-12 w-full rounded-md border border-line px-4 text-[14px] outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
-          />
+          <label className="mb-2 block text-[14px] font-medium">封面图（可选）</label>
+          <ImageUpload value={coverUrl} onChange={setCoverUrl} kind="articles" disabled={pending} />
+          {coverUrl ? (
+            <div className="mt-3 overflow-hidden rounded-md border border-line">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={coverUrl} alt="封面预览" className="max-h-[200px] w-full object-cover" />
+            </div>
+          ) : null}
         </div>
         <div className="flex-1">
           <label className="mb-2 block text-[14px] font-medium">正文（Markdown）*</label>

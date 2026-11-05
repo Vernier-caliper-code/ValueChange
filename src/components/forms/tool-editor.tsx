@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { createToolAction, updateToolAction } from '@/lib/actions/tools';
 import { buttonStyles } from '@/components/ui/button';
+import { ImageUpload } from './image-upload';
 
 type Tool = {
   id?: string;
@@ -91,14 +92,14 @@ export function ToolEditor({ tool }: { tool?: Tool }) {
           />
         </div>
         <div>
-          <label className="mb-2 block text-[14px] font-medium">工具图片 URL *</label>
-          <input
-            type="url"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://... 或 /images/..."
-            className="h-12 w-full rounded-md border border-line px-4 text-[14px] outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
-          />
+          <label className="mb-2 block text-[14px] font-medium">工具图片 *</label>
+          <ImageUpload value={imageUrl} onChange={setImageUrl} kind="tools" disabled={pending} />
+          {imageUrl ? (
+            <div className="mt-3 overflow-hidden rounded-md border border-line">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imageUrl} alt="工具图片预览" className="max-h-[200px] w-full object-cover" />
+            </div>
+          ) : null}
         </div>
         <div>
           <label className="mb-2 block text-[14px] font-medium">官网链接 *</label>

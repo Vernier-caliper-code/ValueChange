@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getAdminProducts } from '@/lib/actions/products';
 import { formatDate } from '@/lib/utils/date';
 import { buttonStyles } from '@/components/ui/button';
+import { ProductActions } from './product-actions';
 
 export default async function StudioProductsPage() {
   const products = await getAdminProducts();
@@ -38,9 +39,7 @@ export default async function StudioProductsPage() {
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <Link href={`/studio/products/${product.id}`} className="text-[13px] text-brand hover:underline">
-                    编辑
-                  </Link>
+                  <ProductActions product={product} />
                 </td>
               </tr>
             ))}

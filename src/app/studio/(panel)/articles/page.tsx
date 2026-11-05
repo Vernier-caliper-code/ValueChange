@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getAdminArticles } from '@/lib/actions/articles';
 import { formatDate } from '@/lib/utils/date';
 import { buttonStyles } from '@/components/ui/button';
+import { ArticleActions } from './article-actions';
 
 export default async function StudioArticlesPage() {
   const articles = await getAdminArticles();
@@ -38,9 +39,7 @@ export default async function StudioArticlesPage() {
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <Link href={`/studio/articles/${article.id}`} className="text-[13px] text-brand hover:underline">
-                    编辑
-                  </Link>
+                  <ArticleActions article={article} />
                 </td>
               </tr>
             ))}

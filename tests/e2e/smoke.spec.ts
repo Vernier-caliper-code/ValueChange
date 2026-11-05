@@ -34,10 +34,13 @@ test.describe('站点冒烟', () => {
     await expect(page.getByRole('link', { name: '回到首页' })).toBeVisible();
   });
 
-  test('无内容板块显示空状态（SITE-002，无数据库时）', async ({ page }) => {
-    test.skip(!!process.env.DATABASE_URL, '有数据库时内容可能存在');
+  test('文章列表页显示文章或空状态（SITE-002）', async ({ page }) => {
     await page.goto('/articles');
-    await expect(page.getByText('内容筹备中')).toBeVisible();
+    // 有内容时显示文章链接，无内容时显示空状态
+    const hasArticles = (await page.locator('main a[href^="/articles/"]').count()) > 0;
+    if (!hasArticles) {
+      await expect(page.getByText('内容筹备中')).toBeVisible();
+    }
   });
 
   test('页面无水平溢出（A11Y 响应式）', async ({ page }) => {

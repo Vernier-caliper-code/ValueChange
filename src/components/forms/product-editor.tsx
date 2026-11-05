@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { createProductAction, updateProductAction } from '@/lib/actions/products';
 import { buttonStyles } from '@/components/ui/button';
+import { ImageUpload } from './image-upload';
 
 type ProductImage = { url: string; alt?: string; sortOrder: number };
 
@@ -116,13 +117,14 @@ export function ProductEditor({ product }: { product?: Product }) {
           {images.map((image, index) => (
             <div key={index} className="mb-3 flex items-center gap-3 rounded-md border border-line bg-white p-3">
               <span className="text-[12px] text-muted">#{index + 1}</span>
-              <input
-                type="url"
-                value={image.url}
-                onChange={(e) => updateImage(index, 'url', e.target.value)}
-                placeholder="图片 URL"
-                className="h-10 flex-1 rounded-md border border-line px-3 text-[13px] outline-none focus:border-brand"
-              />
+              <div className="flex-1">
+                <ImageUpload
+                  value={image.url}
+                  onChange={(url) => updateImage(index, 'url', url)}
+                  kind="products"
+                  disabled={pending}
+                />
+              </div>
               <input
                 type="text"
                 value={image.alt ?? ''}
