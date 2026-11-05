@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" role="img" aria-label="ValuePass 默认文章封面">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#edf3ff"/>
+      <stop offset="1" stop-color="#dce8fd"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="750" fill="url(#bg)"/>
+  <circle cx="600" cy="375" r="150" fill="none" stroke="#2b5be4" stroke-opacity="0.15" stroke-width="2"/>
+  <circle cx="600" cy="375" r="220" fill="none" stroke="#2b5be4" stroke-opacity="0.08" stroke-width="2"/>
+  <circle cx="600" cy="375" r="90" fill="#2b5be4" fill-opacity="0.1"/>
+  <text x="600" y="390" text-anchor="middle" font-family="Georgia, serif" font-size="44" fill="#1d42ae">ValuePass</text>
+  <text x="600" y="600" text-anchor="middle" font-family="monospace" font-size="16" letter-spacing="4" fill="#687386">BUILD · SHARE · GROW</text>
+</svg>

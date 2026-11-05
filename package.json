@@ -10,21 +10,28 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed:admin": "tsx scripts/seed-admin.ts"
+    "db:seed:admin": "tsx scripts/seed-admin.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.0",
     "bcryptjs": "^3.0.2",
     "drizzle-orm": "^0.44.5",
+    "highlight.js": "^11.12.0",
     "next": "^15.5.0",
     "postgres": "^3.4.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-markdown": "^10.1.0",
+    "rehype-highlight": "^7.0.2",
+    "rehype-sanitize": "^6.0.0",
+    "remark-gfm": "^4.0.1",
     "tailwindcss": "^4.1.0",
     "zod": "^4.1.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
+    "@playwright/test": "^1.64.1",
     "@types/node": "^24.0.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",

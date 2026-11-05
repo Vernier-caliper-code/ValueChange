@@ -25,3 +25,8 @@ export function getDb(): Database {
 }
 
 export { schema };
+
+/** 是否已配置数据库。未配置时公开数据函数返回空结果（空状态），配置后查询异常才抛错。 */
+export function hasDatabase(): boolean {
+  return Boolean(process.env.DATABASE_URL);
+}
