@@ -4,3 +4,15 @@ playwright-report/
 screenshots/
 prototype/screenshots/
 prototype/prototype/screenshots/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+/.next/
+/out/
+/coverage/
+*.tsbuildinfo
+next-env.d.ts
+tests/screenshots/
