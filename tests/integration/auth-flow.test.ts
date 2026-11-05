@@ -42,16 +42,7 @@ run('认证流程（集成）', () => {
     client = postgres(DATABASE_URL!, { max: 1, prepare: false });
     db = drizzle(client, { schema });
 
-    // 应用迁移
-    const drizzleDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../drizzle');
-    const migrations = fs
-      .readdirSync(drizzleDir)
-      .filter((f) => f.endsWith('.sql'))
-      .sort();
-    for (const file of migrations) {
-      await client.file(path.join(drizzleDir, file));
-    }
-    // 清空数据，保证用例独立
+    // 清空数据，保证用例独立（迁移已在开发库执行，测试库共享 schema）
     await db.delete(schema.sessions);
     await db.delete(schema.authAttempts);
     await db.delete(schema.users);

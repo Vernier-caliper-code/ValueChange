@@ -50,6 +50,18 @@ test.describe('站点冒烟', () => {
     }
   });
 
+  test('未登录访问后台显示登录页（SEC-001）', async ({ page }) => {
+    await page.goto('/studio');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('欢迎回来');
+    await expect(page.getByLabel('管理员账号')).toBeVisible();
+  });
+
+  test('未登录访问后台子路由被重定向到登录页（SEC-002）', async ({ page }) => {
+    await page.goto('/studio/dashboard');
+    await expect(page).toHaveURL(/\/studio$/);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('欢迎回来');
+  });
+
   test('关于页显示微信号', async ({ page }) => {
     await page.goto('/about');
     await expect(page.getByText('dxl20061110')).toBeVisible();
