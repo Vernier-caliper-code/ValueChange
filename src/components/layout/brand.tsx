@@ -10,9 +10,6 @@ export function Brand({ size = 'md' }: { size?: 'md' | 'sm' }) {
         <span className={`block font-bold tracking-[-1px] ${size === 'md' ? 'text-[22px]' : 'text-[19px]'}`}>
           Value<span className="text-brand">Pass</span>
         </span>
-        {size === 'md' ? (
-          <span className="mt-[-4px] block font-mono text-[8px] tracking-[1.5px] text-muted">BUILD · SHARE · GROW</span>
-        ) : null}
       </span>
     </Link>
   );

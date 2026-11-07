@@ -8,7 +8,7 @@ test.describe('站点冒烟', () => {
   test('首页可访问，包含 Hero 与四板块入口', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveTitle(/ValuePass/);
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('让想法');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('跟着做');
     await expect(page.getByRole('link', { name: /AI 全栈/ }).first()).toBeVisible();
     await expect(page.getByRole('link', { name: /AI 工具/ }).first()).toBeVisible();
     await expect(page.getByRole('link', { name: /经验分享/ }).first()).toBeVisible();
@@ -24,7 +24,7 @@ test.describe('站点冒烟', () => {
       await page.getByRole('navigation', { name: '主导航' }).getByRole('link', { name: '关于我' }).click();
     }
     await expect(page).toHaveURL(/\/about/);
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('做出来');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('软件工程');
   });
 
   test('不存在的 URL 返回 404 页（SITE-001）', async ({ page }) => {
@@ -67,6 +67,6 @@ test.describe('站点冒烟', () => {
 
   test('关于页显示微信号', async ({ page }) => {
     await page.goto('/about');
-    await expect(page.getByText('dxl20061110')).toBeVisible();
+    await expect(page.getByText('aaa1024-__-')).toBeVisible();
   });
 });

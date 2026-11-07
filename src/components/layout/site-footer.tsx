@@ -20,7 +20,6 @@ export function SiteFooter() {
         </div>
         <div className="flex flex-col gap-3 border-t border-[#edf0f4] pt-5 text-[10px] text-[#929ba9] md:flex-row md:items-center md:justify-between">
           <span>© 2026 ValuePass · 分享 AI 全栈开发与真实经验</span>
-          <span className="font-mono tracking-[1px]">LESS HYPE. MORE BUILDING.</span>
         </div>
       </Container>
     </footer>

@@ -20,21 +20,38 @@ export function StudioSidebar() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setMobileOpen(!mobileOpen)}
-        className="fixed left-4 top-4 z-50 rounded-md border border-line bg-white p-2 lg:hidden"
-        aria-label={mobileOpen ? '关闭后台导航' : '打开后台导航'}
-      >
-        ☰
-      </button>
+      {mobileOpen ? (
+        <button
+          type="button"
+          aria-label="关闭后台导航"
+          onClick={() => setMobileOpen(false)}
+          className="fixed inset-0 z-30 bg-ink/30 lg:hidden"
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setMobileOpen(true)}
+          className="fixed left-4 top-4 z-50 rounded-md border border-line bg-white p-2 lg:hidden"
+          aria-label="打开后台导航"
+        >
+          ☰
+        </button>
+      )}
       <aside
         className={`fixed inset-y-0 left-0 z-40 w-[240px] border-r border-line bg-white transition-transform lg:translate-x-0 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex h-[76px] items-center border-b border-line px-6 lg:h-[92px]">
+        <div className="flex h-[76px] items-center justify-between border-b border-line px-6 lg:h-[92px]">
           <Brand size="sm" />
+          <button
+            type="button"
+            onClick={() => setMobileOpen(false)}
+            className="rounded-md border border-line p-2 text-muted hover:text-ink lg:hidden"
+            aria-label="关闭后台导航"
+          >
+            ✕
+          </button>
         </div>
         <nav aria-label="后台导航" className="flex flex-col gap-1 p-4">
           {NAV_ITEMS.map((item) => {

@@ -2,29 +2,16 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { logoutAction } from '@/lib/actions/auth';
 
-type Me = { id: string; username: string } | null;
+import { useCurrentUser } from './use-current-user';
 
 export function HeaderAuth() {
   const router = useRouter();
-  const [user, setUser] = useState<Me>(null);
+  const { user, setUser } = useCurrentUser();
   const [pending, setPending] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch('/api/auth/me', { cache: 'no-store' })
-      .then((res) => res.json())
-      .then((data: { user: Me }) => {
-        if (!cancelled) setUser(data.user);
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   async function handleLogout() {
     setPending(true);

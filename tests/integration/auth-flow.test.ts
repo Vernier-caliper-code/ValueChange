@@ -40,6 +40,12 @@ run('认证流程（集成）', () => {
     db = drizzle(client, { schema });
 
     // 清空数据，保证用例独立（迁移已在开发库执行，测试库共享 schema）
+    // 按外键依赖顺序清理：内容表（E2E 夹具会引用管理员）→ 会话/限流 → 用户
+    await db.delete(schema.productImages);
+    await db.delete(schema.featuredItems);
+    await db.delete(schema.products);
+    await db.delete(schema.tools);
+    await db.delete(schema.articles);
     await db.delete(schema.sessions);
     await db.delete(schema.authAttempts);
     await db.delete(schema.users);
@@ -102,3 +108,4 @@ run('认证流程（集成）', () => {
     await deleteUserSessions(user.id);
   });
 });
+

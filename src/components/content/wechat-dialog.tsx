@@ -41,7 +41,6 @@ export function WechatConsultButton({ productSlug }: { productSlug: string }) {
         >
           ×
         </button>
-        <p className="text-center font-mono text-[11px] tracking-[1.8px] text-brand">LET&apos;S TALK</p>
         <h2 id="wechat-title" className="mt-3 text-center text-[22px] font-bold">
           聊聊你的想法
         </h2>

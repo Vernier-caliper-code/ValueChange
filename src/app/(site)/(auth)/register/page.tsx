@@ -13,7 +13,6 @@ export default async function RegisterPage() {
     <>
       <div className="flex flex-col items-center gap-3 text-center">
         <h1 className="text-[25px] font-bold lg:text-[30px]">创建账号</h1>
-        <p className="text-[14px] text-muted">注册 ValuePass，为后续权益铺路。</p>
       </div>
       <AuthForm mode="register" />
     </>

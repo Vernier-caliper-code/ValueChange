@@ -7,7 +7,7 @@ const shared = {
 };
 
 function brand() {
-  return `<a class="brand" href="/" aria-label="ValuePass 首页">${shared.logo}<span><span class="brand-name">Value<span>Pass</span></span><span class="brand-sub">BUILD · SHARE · GROW</span></span></a>`;
+  return `<a class="brand" href="/" aria-label="ValuePass 首页">${shared.logo}<span><span class="brand-name">Value<span>Pass</span></span></span></a>`;
 }
 
 function currentKey() {
@@ -27,11 +27,11 @@ function header() {
 }
 
 function footer() {
-  return `<footer class="site-footer"><div class="container"><div class="footer-top"><div><a class="brand" href="/">${shared.logo}<span><span class="brand-name">Value<span>Pass</span></span></span></a><p>记录构建的过程，分享真正有用的经验。</p></div><div class="footer-links"><a href="/articles.html">读一篇文章</a><a href="/tools.html">发现好工具</a><a href="/about.html#contact">联系我</a></div></div><div class="footer-bottom"><span>© 2026 ValuePass · 本站为交互原型，内容均为演示</span><span class="mono">LESS HYPE. MORE BUILDING.</span></div></div></footer>`;
+  return `<footer class="site-footer"><div class="container"><div class="footer-top"><div><a class="brand" href="/">${shared.logo}<span><span class="brand-name">Value<span>Pass</span></span></span></a><p>记录构建的过程，分享真正有用的经验。</p></div><div class="footer-links"><a href="/articles.html">读一篇文章</a><a href="/tools.html">发现好工具</a><a href="/about.html#contact">联系我</a></div></div><div class="footer-bottom"><span>© 2026 ValuePass · 本站为交互原型，内容均为演示</span></div></div></footer>`;
 }
 
 function dialog() {
-  return `<div class="dialog-backdrop" id="wechat-dialog" role="dialog" aria-modal="true" aria-labelledby="wechat-title" aria-describedby="wechat-description"><div class="dialog"><button class="dialog-close" type="button" aria-label="关闭微信咨询窗口" data-close-dialog>×</button><div class="eyebrow no-line" style="justify-content:center">LET'S TALK</div><h2 id="wechat-title">聊聊你的想法</h2><p id="wechat-description">对这件商品感兴趣？扫码添加微信，备注「ValuePass」。</p><div class="qr-wrap"><div class="qr-placeholder" role="img" aria-label="微信二维码占位图，上线前替换为站长真实二维码"><span>微信二维码<br>占位图<br>上线前替换</span></div></div><div class="dialog-note">微信号：<strong>YourWeChatID</strong>（演示占位）<br>本站不直接售卖商品，具体事宜请微信沟通。</div><button class="button secondary small" type="button" data-close-dialog>我先再看看</button></div></div>`;
+  return `<div class="dialog-backdrop" id="wechat-dialog" role="dialog" aria-modal="true" aria-labelledby="wechat-title" aria-describedby="wechat-description"><div class="dialog"><button class="dialog-close" type="button" aria-label="关闭微信咨询窗口" data-close-dialog>×</button><h2 id="wechat-title">聊聊你的想法</h2><p id="wechat-description">对这件商品感兴趣？扫码添加微信，备注「ValuePass」。</p><div class="qr-wrap"><div class="qr-placeholder" role="img" aria-label="微信二维码占位图，上线前替换为站长真实二维码"><span>微信二维码<br>占位图<br>上线前替换</span></div></div><div class="dialog-note">微信号：<strong>YourWeChatID</strong>（演示占位）<br>本站不直接售卖商品，具体事宜请微信沟通。</div><button class="button secondary small" type="button" data-close-dialog>我先再看看</button></div></div>`;
 }
 
 function toast(message) {

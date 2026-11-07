@@ -88,11 +88,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <p className="mt-4 whitespace-pre-line text-[14px] leading-[2] text-muted">{product.description}</p>
           <hr className="my-7 border-line" />
           <WechatConsultButton productSlug={product.slug} />
-          <p className="mt-4 text-[11px] leading-[1.9] text-[#929ba9]">
-            仅作展示，不在网站直接售卖。
-            <br />
-            价格、交付方式与是否适合你，都可以先聊聊。
-          </p>
         </div>
       </Container>
     </main>

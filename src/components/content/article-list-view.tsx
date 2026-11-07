@@ -7,18 +7,18 @@ import type { PublicArticle } from '@/lib/data/articles';
 export function ArticleListView({
   articles,
   basePath,
-  intro,
+  title,
 }: {
   articles: PublicArticle[];
   basePath: '/articles' | '/insights';
-  intro: { eyebrow: string; title: string; description: string; footnote: string };
+  title: string;
 }) {
   return (
     <>
-      <PageIntro {...intro} />
+      <PageIntro title={title} />
       <Container className="pb-[76px] pt-3">
         {articles.length > 0 ? (
-          <section aria-label={`${intro.title}列表`}>
+          <section aria-label={`${title}列表`}>
             {articles.map((article) => (
               <ArticleListItem key={article.id} article={article} basePath={basePath} />
             ))}
