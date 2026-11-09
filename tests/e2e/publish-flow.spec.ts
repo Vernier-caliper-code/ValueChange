@@ -221,7 +221,7 @@ test.describe('PRD 验收：后台发布与前台展示', () => {
     await page.getByLabel('密码', { exact: true }).fill('newpass123');
     await page.getByRole('button', { name: '登录' }).click();
     await expect(page).toHaveURL('/');
-    await expect(page.getByText(username, { exact: true })).toBeVisible();
+    await expect(page.locator('header').getByText(username, { exact: true }).first()).toBeVisible();
 
     // 管理员禁用该用户
     await logoutUser(page);

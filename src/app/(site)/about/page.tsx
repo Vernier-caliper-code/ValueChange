@@ -16,14 +16,18 @@ export const metadata: Metadata = buildMetadata({
 export default function AboutPage() {
   return (
     <main id="main">
-      <section>
-        <Container className="pb-14 pt-[77px]">
-          <h1 className="my-6 text-[34px] font-bold leading-[1.35] tracking-[-2px] lg:text-[52px]">
+      <section className="relative overflow-hidden bg-gradient-to-b from-[rgba(239,246,255,0.6)] to-transparent">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <div className="intro-blob intro-blob-a" />
+          <div className="intro-blob intro-blob-b" />
+        </div>
+        <Container className="relative pb-14 pt-[77px]">
+          <h1 className="hero-enter my-6 text-[34px] font-bold leading-[1.35] tracking-[-2px] lg:text-[52px]">
             {ABOUT.heroTitle[0]}
             <br />
             <span className="text-brand">{ABOUT.heroTitle[1]}</span>
           </h1>
-          <p className="max-w-[560px] text-[15px] leading-[2] text-[#657186]">{ABOUT.heroDescription}</p>
+          <p className="hero-enter hero-enter-d1 max-w-[560px] text-[15px] leading-[2] text-[#657186]">{ABOUT.heroDescription}</p>
         </Container>
       </section>
 

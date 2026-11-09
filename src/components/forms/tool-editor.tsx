@@ -1,9 +1,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { createToolAction, updateToolAction } from '@/lib/actions/tools';
+import { uploadImageAction } from '@/lib/actions/upload';
 import { buttonStyles } from '@/components/ui/button';
 import { ImageUpload } from './image-upload';
 
@@ -28,6 +29,52 @@ export function ToolEditor({ tool }: { tool?: Tool }) {
   const [websiteUrl, setWebsiteUrl] = useState(tool?.websiteUrl ?? '');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const contentImageInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingContentImage, setUploadingContentImage] = useState(false);
+
+  async function handleContentImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploadingContentImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const result = await uploadImageAction(formData);
+      if (!result.ok) {
+        throw new Error(result.error ?? '上传失败');
+      }
+      insertAtCursor(`![${file.name.replace(/\.[^.]+$/, '')}](${result.url!})`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '插图失败');
+    } finally {
+      setUploadingContentImage(false);
+      if (contentImageInputRef.current) contentImageInputRef.current.value = '';
+    }
+  }
+
+  function insertVideoEmbed() {
+    const embedCode = `<iframe src="https://player.bilibili.com/player.html?bvid=你的BV号" allowfullscreen></iframe>`;
+    insertAtCursor(embedCode);
+  }
+
+  function insertAtCursor(text: string) {
+    const textarea = document.querySelector<HTMLTextAreaElement>('textarea[placeholder*="Markdown"]');
+    if (!textarea) {
+      setDescription((prev) => prev + '\n\n' + text);
+      return;
+    }
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const before = description.slice(0, start);
+    const after = description.slice(end);
+    const insertion = `\n\n${text}\n\n`;
+    setDescription(before + insertion + after);
+    setTimeout(() => {
+      textarea.focus();
+      const newPos = start + insertion.length;
+      textarea.setSelectionRange(newPos, newPos);
+    }, 0);
+  }
 
   async function handleSubmit(intent: 'draft' | 'publish') {
     setError(null);
@@ -83,7 +130,27 @@ export function ToolEditor({ tool }: { tool?: Tool }) {
           />
         </div>
         <div>
-          <label className="mb-2 block text-[14px] font-medium">详细介绍（Markdown）</label>
+          <div className="mb-2 flex items-center justify-between">
+            <label className="block text-[14px] font-medium">详细介绍（Markdown）</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => contentImageInputRef.current?.click()}
+                disabled={pending || uploadingContentImage}
+                className={buttonStyles({ variant: 'ghost', size: 'sm' })}
+              >
+                {uploadingContentImage ? '上传中…' : '插图'}
+              </button>
+              <button
+                type="button"
+                onClick={insertVideoEmbed}
+                disabled={pending}
+                className={buttonStyles({ variant: 'ghost', size: 'sm' })}
+              >
+                嵌入视频
+              </button>
+            </div>
+          </div>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -93,7 +160,14 @@ export function ToolEditor({ tool }: { tool?: Tool }) {
         </div>
         <div>
           <label className="mb-2 block text-[14px] font-medium">工具图片 *</label>
-          <ImageUpload value={imageUrl} onChange={setImageUrl} kind="tools" disabled={pending} />
+          <ImageUpload value={imageUrl} onChange={setImageUrl} disabled={pending} />
+          <input
+            ref={contentImageInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleContentImageUpload}
+            className="hidden"
+          />
           {imageUrl ? (
             <div className="mt-3 overflow-hidden rounded-md border border-line">
               {/* eslint-disable-next-line @next/next/no-img-element */}

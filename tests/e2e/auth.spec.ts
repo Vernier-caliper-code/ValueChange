@@ -21,7 +21,7 @@ test.describe('认证流程', () => {
     await registerUser(page, username);
 
     await expect(page).toHaveURL('/');
-    await expect(page.getByText(username, { exact: true })).toBeVisible();
+    await expect(page.locator('header').getByText(username, { exact: true }).first()).toBeVisible();
 
     const cookie = (await page.context().cookies()).find((c) => c.name === 'vp_session');
     expect(cookie?.httpOnly).toBe(true);
@@ -80,7 +80,7 @@ test.describe('认证流程', () => {
     await fillLogin(page, username, 'password8');
     await page.getByRole('button', { name: '登录' }).click();
     await expect(page).toHaveURL('/');
-    await expect(page.getByText(username, { exact: true })).toBeVisible();
+    await expect(page.locator('header').getByText(username, { exact: true }).first()).toBeVisible();
   });
 
   test('AUTH-006：连续 5 次失败锁定 15 分钟', async ({ page }, testInfo) => {

@@ -29,9 +29,10 @@ describe('MarkdownContent 清洗规则', () => {
     const html = render('[点我](javascript:alert(1))');
     expect(html).not.toContain('javascript:');
   });
-  it('图片仅允许 https（http 被剥除）', () => {
-    const html = render('![ok](https://cdn.com/a.png)\n![bad](http://evil.com/b.png)');
+  it('图片允许 https 和站内相对路径，http 被剥除', () => {
+    const html = render('![ok](https://cdn.com/a.png)\n![local](/images/local.png)\n![bad](http://evil.com/b.png)');
     expect(html).toContain('https://cdn.com/a.png');
+    expect(html).toContain('/images/local.png');
     expect(html).not.toContain('http://evil.com');
   });
   it('代码块保留 language className 供高亮', () => {
@@ -42,5 +43,12 @@ describe('MarkdownContent 清洗规则', () => {
     const html = render('[站内](/articles)');
     expect(html).toContain('href="/articles"');
     expect(html).not.toContain('target="_blank"');
+  });
+  it('iframe 仅允许白名单视频平台域名', () => {
+    const allowed = render('<iframe src="https://player.bilibili.com/player.html?bvid=BV1xx"></iframe>');
+    expect(allowed).toContain('player.bilibili.com');
+    const blocked = render('<iframe src="https://evil.com/embed"></iframe>');
+    expect(blocked).not.toContain('evil.com');
+    expect(blocked).toContain('[不支持的视频嵌入地址]');
   });
 });

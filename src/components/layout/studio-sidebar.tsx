@@ -61,7 +61,7 @@ export function StudioSidebar() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-3 rounded-md px-4 py-3 text-[14px] transition-colors ${
+                className={`flex items-center gap-3 rounded-md px-4 py-3 text-[14px] spring-press ${
                   active ? 'bg-brand text-white' : 'text-muted hover:bg-paper hover:text-ink'
                 }`}
               >

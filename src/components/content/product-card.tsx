@@ -7,7 +7,7 @@ export function ProductCard({ product }: { product: PublicProduct & { cover: Pro
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="group overflow-hidden rounded-[9px] border border-line bg-white transition-all duration-200 hover:-translate-y-[3px] hover:shadow-[0_10px_28px_rgba(24,35,54,0.03)]"
+      className="group overflow-hidden rounded-[9px] border border-line bg-white transition-all duration-200 hover:-translate-y-[3px] hover:shadow-[0_10px_28px_rgba(24,35,54,0.03)] glow-hover"
     >
       <div className="overflow-hidden bg-soft-blue">
         {product.cover ? (

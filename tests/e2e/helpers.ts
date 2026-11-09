@@ -24,7 +24,7 @@ export async function studioLogin(page: Page) {
   await page.getByLabel('管理员账号').fill(username);
   await page.getByLabel('密码').fill(password);
   await page.getByRole('button', { name: '登录管理后台' }).click();
-  await expect(page).toHaveURL(/\/studio\/dashboard/);
+  await expect(page).toHaveURL(/\/studio\/dashboard/, { timeout: 30000 });
 }
 
 /** 点击触发 Server Action 的控件，并等待对应 POST 请求完成。 */

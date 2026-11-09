@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 import type { Heading } from '@/lib/utils/markdown-text';
 
-export function ArticleToc({ headings }: { headings: Heading[] }) {
+export function ArticleToc({ headings, onNavigate }: { headings: Heading[]; onNavigate?: () => void }) {
   const [active, setActive] = useState(0);
 
   useEffect(() => {
@@ -36,6 +36,7 @@ export function ArticleToc({ headings }: { headings: Heading[] }) {
         <a
           key={index}
           href={`#section-${index}`}
+          onClick={onNavigate}
           className={`border-l py-2 text-[12px] leading-[1.7] transition-colors ${
             heading.depth === 3 ? 'pl-8' : 'pl-4'
           } ${active === index ? 'border-brand text-brand' : 'border-line text-muted hover:text-ink'}`}

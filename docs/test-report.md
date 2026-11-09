@@ -1,11 +1,51 @@
 # ValuePass 测试报告
 
-> 版本：v1.0　执行日期：2026-11-05
-> 依据：`docs/test-plan.md` v1.0
+> 版本：v1.1　执行日期：2026-11-09
+> 依据：`docs/test-plan.md` v1.1
 > 执行环境：Local（Windows + Node 26），Next.js 15.5.29，独立 Neon 测试库（`TEST_DATABASE_URL`）
 > 执行人：开发（自动化执行为本报告数据来源）
 
-## 1. 执行范围
+> **最新执行：v1.1（2026-11-09）**
+>
+> 本次覆盖 Netlify 生产部署、Netlify Blobs 图片持久化、Markdown 图片/视频嵌入、移动端目录、微交互与氛围背景等增量改动。
+>
+> 执行环境：Local（Windows + Node 26）、Next.js 15.5.29、Neon 生产库 + Netlify Blobs（线上验证）；测试库 `TEST_DATABASE_URL` 用于 E2E。
+
+## 0. v1.1 增量执行结果（2026-11-09）
+
+| 项目 | 结果 | 明细 |
+|------|------|------|
+| ESLint | ✅ 通过 | 修复 `.netlify/**` 被误扫的问题（新增忽略规则） |
+| TypeScript | ✅ 通过 | 无 TS 错误 |
+| 单元 + 集成 | ✅ **61/61** | 13 个文件（新增 `markdown-media.test.tsx` 4 例） |
+| E2E 全量 | ✅ **46 通过 / 0 失败 / 18 跳过** | 跳过项均为移动端按设计跳过 |
+| 生产构建 | ✅ 通过 | Netlify 构建成功（76 files + 1 function） |
+| 线上页面可达性 | ✅ 8/8 | 首页、四板块、关于、登录、注册全部 200 |
+| 线上后台登录 | ✅ 通过 | 冷启动约 8 秒（Serverless 特性，非缺陷） |
+| 线上图片上传 | ✅ 通过 | 上传 → 预览加载成功 → URL 返回 `image/png` |
+| **Blobs 持久化** | ✅ 通过 | 重新部署后原图片 URL 仍返回 200（78 bytes） |
+
+**v1.1 变更摘要**
+
+- 图片上传：Vercel Blob 客户端直传 → Server Action + 存储层抽象（生产 Netlify Blobs / 本地 `uploads/`）
+- Markdown：新增 `rehype-raw`，支持站内相对路径图片与白名单视频 iframe（Bilibili / 腾讯视频 / YouTube）
+- 编辑体验：文章 / 工具 / 商品三处编辑器统一提供「插图」「嵌入视频」按钮
+- 前台视觉：Hero 极光氛围 + 鼠标视差、首屏依次入场、页面切换过渡、按钮与卡片微交互（弹簧按压 + 悬停光晕）
+- 移动端：抽屉式导航、文章底部弹出目录（左下角入口）
+- 部署：Vercel → Netlify（`netlify.toml` + `@netlify/plugin-nextjs`）
+
+**已知限制**
+
+| 项 | 说明 | 影响 |
+|----|------|------|
+| Powered by Netlify 角标 | 免费计划强制显示 | 品牌观感；升级 Pro 可移除 |
+| Serverless 冷启动 | 后台首屏/登录约 5~10 秒 | 仅影响后台；公开页为静态 |
+| Blobs 免费额度 | 存储与流量有上限 | 图片量大时需关注用量 |
+| `SITE-004` | Next.js 15.5 动态路由 `notFound()` 返回 200（上游 #99343） | 页面内容正确，状态码待上游修复 |
+
+---
+
+## 1. 执行范围## 1. 执行范围
 
 - 代码检查：`npm run lint`
 - 类型检查：`npx tsc --noEmit`
@@ -105,5 +145,5 @@ E2E 数据隔离：Playwright 进程强制注入 `DATABASE_URL=TEST_DATABASE_URL
 
 - 全部 P0/P1 自动化用例通过；冒烟十条全绿。
 - 1 个已知上游缺陷（SITE-004）不阻断上线：404 页面展示正确，仅动态路由 HTTP 状态码受 Next.js 15.5 框架缺陷影响；已通过 `test.fail` 纳入回归跟踪。
-- 剩余手工项集中在 Preview 依赖项（上传、统计、Lighthouse），建议软上线前在 Vercel Preview 完成一轮核对。
+- 剩余手工项集中在 Preview 依赖项（上传、统计、Lighthouse），建议在 Netlify Deploy Preview 完成核对。
 - **结论：满足软上线条件。**

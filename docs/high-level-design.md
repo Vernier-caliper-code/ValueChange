@@ -1,7 +1,7 @@
 # ValuePass 概要设计
 
-> 状态：**已确认（v1.0）**
-> 日期：2026-11-05　作者：站长　依据：PRD v1.1、已确认原型 v1
+> 状态：**已实现（v1.1）**
+> 日期：2026-11-09　作者：站长　依据：PRD v1.2、已实现代码
 > 本文件是概要设计，详细字段、API 契约、页面级规格见后续《详细设计》。
 
 ## 1. 文档信息
@@ -12,6 +12,7 @@
 |------|------|----------|
 | v0.1 | 2026-11-05 | 概要设计初稿 |
 | v1.0 | 2026-11-05 | 定稿：确认版心方案 A、Tailwind CSS、`/studio` 后台路径、Drizzle ORM、Server Actions、数据库会话、种子脚本创建管理员 |
+| v1.1 | 2026-11-09 | 部署方案改为 Netlify + Neon + Netlify Blobs；Markdown 支持图片与白名单视频嵌入 |
 
 ### 1.2 已确认决策
 
@@ -24,8 +25,8 @@
 | 写操作 | Server Actions |
 | 会话 | 数据库 Session + httpOnly Cookie |
 | 管理员创建 | 一次性种子脚本 |
-| 数据库 | Vercel Postgres |
-| 图片存储 | Vercel Blob |
+| 数据库 | Neon PostgreSQL |
+| 图片存储 | Netlify Blobs |
 
 ---
 
@@ -36,9 +37,9 @@
 | 产品形态 | 个人技术内容站（AI 全栈 / AI 工具 / 经验分享 / 商品展示） |
 | 用户规模 | 个人站点，低并发，单管理员 |
 | 团队 | 一人全栈开发 |
-| 部署平台 | Vercel（免费子域名起步） |
-| 数据库 | Vercel Postgres |
-| 图片存储 | Vercel Blob |
+| 部署平台 | Netlify（免费子域名起步） |
+| 数据库 | Neon PostgreSQL |
+| 图片存储 | Netlify Blobs |
 | 语言 | 第一版全中文 |
 | 终端 | PC + 手机响应式，均为 P0 |
 | 性能目标 | 首屏 < 2s，后台操作响应 < 1s |
@@ -48,14 +49,14 @@
 
 ## 3. 总体架构
 
-采用 **Next.js 全栈单体架构**：页面、服务端逻辑、后台管理、接口全部在一个项目中，部署到 Vercel。
+采用 **Next.js 全栈单体架构**：页面、服务端逻辑、后台管理、接口全部在一个项目中，部署到 Netlify。
 
 ```mermaid
 flowchart LR
-  U[访客 / 注册用户] -->|HTTPS| N[Next.js App Router on Vercel]
+  U[访客 / 注册用户] -->|HTTPS| N[Next.js App Router on Netlify]
   A[管理员] -->|HTTPS| N
-  N --> PG[(Vercel Postgres)]
-  N --> BLOB[(Vercel Blob)]
+  N --> PG[(Neon PostgreSQL)]
+  N --> BLOB[(Netlify Blobs)]
   N --> BAIDU[百度统计]
 ```
 
@@ -73,16 +74,16 @@ flowchart LR
 
 | 层 | 选型 | 理由 |
 |----|------|------|
-| 框架 | Next.js App Router + TypeScript（strict） | SEO 友好、Vercel 原生支持、前后端一体 |
+| 框架 | Next.js App Router + TypeScript（strict） | SEO 友好、Netlify 官方插件支持、前后端一体 |
 | 样式 | **Tailwind CSS**（主题扩展 + CSS 变量承载设计 Token） | 响应式迭代快，与 Next.js 生态一致；以原型为视觉基准重建样式 |
-| 数据库 | Vercel Postgres | 已确认 |
+| 数据库 | Neon PostgreSQL | 已确认 |
 | ORM | **Drizzle ORM + drizzle-kit** | 轻量、类型安全、SQL 可控、迁移简单 |
 | 参数校验 | **Zod** | 表单、Server Action、上传参数统一校验 |
-| 密码哈希 | **bcryptjs** | 纯 JS，Vercel Serverless 无原生依赖问题 |
+| 密码哈希 | **bcryptjs** | 纯 JS，Serverless 环境无原生依赖问题 |
 | 会话 | 数据库 Session + httpOnly Cookie | 可撤销、可强制下线 |
-| Markdown 渲染 | react-markdown + remark-gfm + rehype-sanitize + 高亮插件 | 防 XSS，支持代码块 |
+| Markdown 渲染 | react-markdown + remark-gfm + rehype-raw + rehype-sanitize + 高亮插件 | 防 XSS，支持代码块与白名单视频嵌入 |
 | Markdown 编辑器 | 左右分栏：textarea + 实时预览 | 与原型一致，不引入重型编辑器 |
-| 图片 | Vercel Blob + `next/image` | 已确认；自动优化与懒加载 |
+| 图片 | Netlify Blobs + `/api/images` 代理 | 已确认；存储层可替换 |
 | 统计 | 百度统计（生产环境才加载） | 已确认 |
 | 测试 | Playwright（E2E）+ Vitest（关键纯函数） | 覆盖验收标准与回归 |
 
@@ -183,7 +184,7 @@ flowchart LR
 
 1. 用户表同时承载管理员和普通用户，单管理员通过种子脚本创建。
 2. 文章/工具/商品均使用唯一 `slug` 生成 SEO 友好 URL；中文标题允许自定义 slug，留空则用短 ID。
-3. 封面/工具图/商品图只存 Vercel Blob URL，不存二进制。
+3. 封面/工具图/商品图只存图片路径（`/api/images/xxx`），不存二进制。
 4. 精选用统一表，保证首页可跨类型排序；删除实体时同步清理精选记录。
 5. 详细字段类型、索引、约束在《详细设计》中定义。
 
@@ -218,7 +219,7 @@ flowchart LR
 
 - 管理端请求 `POST /api/upload`（需管理员会话）
 - 校验：登录态 → 文件类型（图片）→ 大小 ≤5MB → 生成随机文件名
-- 上传 Vercel Blob，返回 URL 给编辑器
+- 上传至 Netlify Blobs（本地为 `uploads/`），返回路径给编辑器
 - 失败返回明确错误码，前端保留已填表单
 
 ### 8.5 统一错误模型
@@ -302,15 +303,15 @@ flowchart LR
 
 | 项 | 方案 |
 |----|------|
-| 构建 | Vercel，Next.js 自动构建；根目录设为仓库根目录 |
+| 构建 | Netlify，`@netlify/plugin-nextjs` 自动适配；配置见 `netlify.toml` |
 | 环境 | Production / Preview；预览环境不写生产数据 |
-| 数据库迁移 | drizzle-kit 迁移脚本，部署前手动/CI 执行，不在运行时执行 |
-| 环境变量 | `DATABASE_URL`、`BLOB_READ_WRITE_TOKEN`、`SESSION_SECRET`、`NEXT_PUBLIC_SITE_URL`、`BAIDU_ANALYTICS_ID`、管理员种子账号变量 |
+| 数据库迁移 | drizzle-kit 迁移脚本，本地手动执行（连生产 Neon），不在运行时执行 |
+| 环境变量 | `DATABASE_URL`、`NEXT_PUBLIC_SITE_URL`、`BAIDU_ANALYTICS_ID`、`ADMIN_USERNAME`、`ADMIN_PASSWORD`；Blobs 凭据由平台自动注入 |
 | 管理员创建 | 一次性种子脚本 `pnpm db:seed:admin`（或 npm 等价命令），只创建 ADMIN 账号 |
-| 备份 | Vercel Postgres 快照为基础；建议每周手动导出一次 SQL |
-| 监控 | Vercel 日志 + 百度统计；错误监控（Sentry）列为 P1 |
-| 域名 | 先 `*.vercel.app`；后期绑定自有域名或备案迁移 |
-| 回滚 | 依赖 Vercel 部署历史即时回滚 |
+| 备份 | Neon 自动快照为基础；建议每周手动导出一次 SQL |
+| 监控 | Netlify Function 日志 + 百度统计；错误监控（Sentry）列为 P1 |
+| 域名 | 先 `valuepass.netlify.app`；后期绑定自有域名 |
+| 回滚 | 依赖 Netlify 部署历史即时回滚 |
 
 ---
 
@@ -318,8 +319,8 @@ flowchart LR
 
 | 风险 | 影响 | 处置 |
 |------|------|------|
-| Vercel 国内访问波动、百度收录弱 | 搜索流量受限 | 已接受；后期自有域名/备案迁移 |
-| Vercel Postgres / Blob 免费额度 | 超量需付费或限流 | 控制图片尺寸与数量，监控用量 |
+| Netlify 国内访问波动、百度收录弱 | 搜索流量受限 | 已接受；后期自有域名优化 |
+| Neon / Netlify Blobs 免费额度 | 超量需付费或限流 | 控制图片尺寸与数量，监控用量 |
 | 注册登录无权益 | 用户可能不用 | PRD 已确认，作为未来铺垫 |
 | 无自助找回密码 | 用户忘记密码需人工处理 | 后台提供手动重置；文案提前说明 |
 | Serverless 无法用内存限流 | 多实例计数不准 | 用数据库实现账号锁定 |
@@ -336,7 +337,7 @@ flowchart LR
 | 阶段 1 | Next.js 工程初始化、Tailwind 设计 Token、数据库 Schema、账号体系、管理员种子 | 注册/登录/禁用/锁定可验证 |
 | 阶段 2 | 前台六个板块页面 + 版心系统 + SEO + 响应式 | 对照原型与 PRD 验收标准 |
 | 阶段 3 | 后台 CRUD、精选、图片上传、用户管理 | 完整发布流程跑通 |
-| 阶段 4 | 百度统计、异常状态、性能优化、Vercel 部署 | 上线检查清单通过 |
+| 阶段 4 | 百度统计、异常状态、性能优化、Netlify 部署 | 上线检查清单通过 |
 | 阶段 5 | 填充正式内容、软上线、一周内补齐内容量 | PRD 上线标准 |
 
 ---

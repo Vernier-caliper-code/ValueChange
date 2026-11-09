@@ -1,9 +1,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { createProductAction, updateProductAction } from '@/lib/actions/products';
+import { uploadImageAction } from '@/lib/actions/upload';
 import { buttonStyles } from '@/components/ui/button';
 import { ImageUpload } from './image-upload';
 
@@ -26,6 +27,52 @@ export function ProductEditor({ product }: { product?: Product }) {
   const [images, setImages] = useState<ProductImage[]>(product?.images ?? []);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const contentImageInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingContentImage, setUploadingContentImage] = useState(false);
+
+  async function handleContentImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploadingContentImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const result = await uploadImageAction(formData);
+      if (!result.ok) {
+        throw new Error(result.error ?? '上传失败');
+      }
+      insertAtCursor(`![${file.name.replace(/\.[^.]+$/, '')}](${result.url!})`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '插图失败');
+    } finally {
+      setUploadingContentImage(false);
+      if (contentImageInputRef.current) contentImageInputRef.current.value = '';
+    }
+  }
+
+  function insertVideoEmbed() {
+    const embedCode = `<iframe src="https://player.bilibili.com/player.html?bvid=你的BV号" allowfullscreen></iframe>`;
+    insertAtCursor(embedCode);
+  }
+
+  function insertAtCursor(text: string) {
+    const textarea = document.querySelector<HTMLTextAreaElement>('textarea[placeholder*="Markdown"]');
+    if (!textarea) {
+      setDescription((prev) => prev + '\n\n' + text);
+      return;
+    }
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const before = description.slice(0, start);
+    const after = description.slice(end);
+    const insertion = `\n\n${text}\n\n`;
+    setDescription(before + insertion + after);
+    setTimeout(() => {
+      textarea.focus();
+      const newPos = start + insertion.length;
+      textarea.setSelectionRange(newPos, newPos);
+    }, 0);
+  }
 
   function addImage() {
     setImages([...images, { url: '', alt: '', sortOrder: images.length }]);
@@ -99,7 +146,27 @@ export function ProductEditor({ product }: { product?: Product }) {
           />
         </div>
         <div>
-          <label className="mb-2 block text-[14px] font-medium">商品描述 *</label>
+          <div className="mb-2 flex items-center justify-between">
+            <label className="block text-[14px] font-medium">商品描述（Markdown）*</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => contentImageInputRef.current?.click()}
+                disabled={pending || uploadingContentImage}
+                className={buttonStyles({ variant: 'ghost', size: 'sm' })}
+              >
+                {uploadingContentImage ? '上传中…' : '插图'}
+              </button>
+              <button
+                type="button"
+                onClick={insertVideoEmbed}
+                disabled={pending}
+                className={buttonStyles({ variant: 'ghost', size: 'sm' })}
+              >
+                嵌入视频
+              </button>
+            </div>
+          </div>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -114,6 +181,13 @@ export function ProductEditor({ product }: { product?: Product }) {
               ＋ 添加图片
             </button>
           </div>
+          <input
+            ref={contentImageInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleContentImageUpload}
+            className="hidden"
+          />
           {images.map((image, index) => (
             <div key={index} className="mb-3 flex items-center gap-3 rounded-md border border-line bg-white p-3">
               <span className="text-[12px] text-muted">#{index + 1}</span>
@@ -121,7 +195,6 @@ export function ProductEditor({ product }: { product?: Product }) {
                 <ImageUpload
                   value={image.url}
                   onChange={(url) => updateImage(index, 'url', url)}
-                  kind="products"
                   disabled={pending}
                 />
               </div>

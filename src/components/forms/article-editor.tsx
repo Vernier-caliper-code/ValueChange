@@ -1,10 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { createArticleAction, updateArticleAction } from '@/lib/actions/articles';
 import { MarkdownContent } from '@/components/content/markdown-content';
+import { uploadImageAction } from '@/lib/actions/upload';
 import { buttonStyles } from '@/components/ui/button';
 import { ImageUpload } from './image-upload';
 
@@ -29,6 +30,53 @@ export function ArticleEditor({ article }: { article?: Article }) {
   const [category, setCategory] = useState<'AI_FULLSTACK' | 'PERSPECTIVE'>(article?.category ?? 'AI_FULLSTACK');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const contentImageInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingContentImage, setUploadingContentImage] = useState(false);
+
+  async function handleContentImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploadingContentImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const result = await uploadImageAction(formData);
+      if (!result.ok) {
+        throw new Error(result.error ?? '上传失败');
+      }
+      insertAtCursor(`![${file.name.replace(/\.[^.]+$/, '')}](${result.url!})`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '插图失败');
+    } finally {
+      setUploadingContentImage(false);
+      if (contentImageInputRef.current) contentImageInputRef.current.value = '';
+    }
+  }
+
+  function insertVideoEmbed() {
+    const embedCode = `<iframe src="https://player.bilibili.com/player.html?bvid=你的BV号" allowfullscreen></iframe>`;
+    insertAtCursor(embedCode);
+  }
+
+  function insertAtCursor(text: string) {
+    const textarea = document.querySelector<HTMLTextAreaElement>('textarea[placeholder*="Markdown 语法"]');
+    if (!textarea) {
+      setContentMd((prev) => prev + '\n\n' + text);
+      return;
+    }
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const before = contentMd.slice(0, start);
+    const after = contentMd.slice(end);
+    const insertion = `\n\n${text}\n\n`;
+    setContentMd(before + insertion + after);
+    // 恢复焦点并把光标移到插入内容之后
+    setTimeout(() => {
+      textarea.focus();
+      const newPos = start + insertion.length;
+      textarea.setSelectionRange(newPos, newPos);
+    }, 0);
+  }
 
   async function handleSubmit(intent: 'draft' | 'publish') {
     setError(null);
@@ -98,7 +146,7 @@ export function ArticleEditor({ article }: { article?: Article }) {
         </div>
         <div>
           <label className="mb-2 block text-[14px] font-medium">封面图（可选）</label>
-          <ImageUpload value={coverUrl} onChange={setCoverUrl} kind="articles" disabled={pending} />
+          <ImageUpload value={coverUrl} onChange={setCoverUrl} disabled={pending} />
           {coverUrl ? (
             <div className="mt-3 overflow-hidden rounded-md border border-line">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -106,8 +154,35 @@ export function ArticleEditor({ article }: { article?: Article }) {
             </div>
           ) : null}
         </div>
+        <input
+          ref={contentImageInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={handleContentImageUpload}
+          className="hidden"
+        />
         <div className="flex-1">
-          <label className="mb-2 block text-[14px] font-medium">正文（Markdown）*</label>
+          <div className="mb-2 flex items-center justify-between">
+            <label className="block text-[14px] font-medium">正文（Markdown）*</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => contentImageInputRef.current?.click()}
+                disabled={pending || uploadingContentImage}
+                className={buttonStyles({ variant: 'ghost', size: 'sm' })}
+              >
+                {uploadingContentImage ? '上传中…' : '插图'}
+              </button>
+              <button
+                type="button"
+                onClick={insertVideoEmbed}
+                disabled={pending}
+                className={buttonStyles({ variant: 'ghost', size: 'sm' })}
+              >
+                嵌入视频
+              </button>
+            </div>
+          </div>
           <textarea
             value={contentMd}
             onChange={(e) => setContentMd(e.target.value)}

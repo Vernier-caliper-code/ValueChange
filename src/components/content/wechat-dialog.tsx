@@ -56,8 +56,6 @@ export function WechatConsultButton({ productSlug }: { productSlug: string }) {
           <button type="button" onClick={handleCopy} className="ml-1 font-semibold text-brand hover:underline">
             {copied ? '已复制 ✓' : '复制'}
           </button>
-          <br />
-          本站不直接售卖商品，具体事宜请微信沟通。
         </p>
         <button
           type="button"

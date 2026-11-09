@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { Breadcrumb } from '@/components/content/breadcrumb';
 import { ProductCard } from '@/components/content/product-card';
 import { ProductGallery } from '@/components/content/product-gallery';
+import { MarkdownContent } from '@/components/content/markdown-content';
 import { WechatConsultButton } from '@/components/content/wechat-dialog';
 import { Container } from '@/components/ui/container';
 import { getOtherActiveProducts, getProductBySlug, getProducts } from '@/lib/data/products';
@@ -85,7 +86,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             MADE BY VALUEPASS
           </p>
           <h1 className="mt-4 text-[28px] font-bold leading-[1.4] lg:text-[36px]">{product.name}</h1>
-          <p className="mt-4 whitespace-pre-line text-[14px] leading-[2] text-muted">{product.description}</p>
+                    <div className="mt-4 text-[14px] leading-[2] text-muted">
+            <MarkdownContent content={product.description} />
+          </div>
           <hr className="my-7 border-line" />
           <WechatConsultButton productSlug={product.slug} />
         </div>

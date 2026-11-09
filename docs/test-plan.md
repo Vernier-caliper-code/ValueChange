@@ -11,6 +11,7 @@
 |------|------|------|
 | v0.1 | 2026-11-05 | 初稿：策略、范围、编号规则 |
 | v1.0 | 2026-11-05 | 补齐全部详细用例（§7），标注自动化落地位置，建立执行与缺陷反馈闭环 |
+| v1.1 | 2026-11-09 | 部署改为 Netlify + Blobs；上传用例改为 Server Action；新增 Markdown 图片/视频与持久化用例（UP-006/007） |
 
 ## 1. 测试目标
 
@@ -28,7 +29,7 @@
 - 注册、登录、退出、禁用账号、登录锁定、手动重置密码
 - Studio 后台：文章、工具、商品、精选、用户管理
 - Markdown 编辑与渲染
-- Vercel Blob 图片上传
+- Netlify Blobs 图片上传（本地回退 uploads/）
 - 404、空状态、错误提示
 - SEO：metadata、sitemap、robots、JSON-LD
 - 百度统计与 2 个自定义事件
@@ -52,7 +53,7 @@
 | 集成测试 | Vitest + 测试数据库 | 注册/登录/锁定、会话闭环、禁用失效 | 每次提交或每日 |
 | E2E | Playwright（桌面 1440 + 手机 390 双项目） | PRD 十条验收、后台 CRUD、权限、SEO、接口安全 | 每次合并前 |
 | 视觉回归 | Playwright 截图 | 首页、文章、工具、商品、关于、登录、后台关键页 | 每个里程碑 |
-| 性能 | Lighthouse / Vercel 指标 | LCP、CLS、INP、首屏 JS | 上线前 |
+| 性能 | Lighthouse / Netlify 指标 | LCP、CLS、INP、首屏 JS | 上线前 |
 | 安全 | 自动化 + 手工 | 权限、限流、XSS、上传、Cookie、SQL 注入防护 | 上线前 |
 | 可访问性 | 自动化 + 手工 | 键盘、焦点、ARIA、对比度、移动端触控 | 每个里程碑 |
 | SEO | 自动化 + 手工 | metadata、sitemap、robots、JSON-LD、canonical | 上线前 |
@@ -64,8 +65,8 @@
 
 | 环境 | 用途 | 说明 |
 |------|------|------|
-| Local | 开发自测 | 本地 Next.js + 测试数据库 + 测试 Blob Token |
-| Preview | 集成与验收 | Vercel Preview，禁止写生产数据 |
+| Local | 开发自测 | 本地 Next.js + 测试数据库 + 本地 uploads/ |
+| Preview | 集成与验收 | Netlify Deploy Preview，禁止写生产数据 |
 | Production | 上线冒烟 | 只执行只读与关键路径冒烟 |
 
 ### 4.2 测试数据
@@ -80,7 +81,7 @@
   - 禁用用户：`e2e_disabled` / `password8`
 - 锁定用户：连续失败 5 次后验证（E2E 与集成各一份）
 - 图片：JPG、PNG、WebP 各 1 张；超 5MB、非图片各 1 个（手工用例素材）
-- Blob 测试文件统一使用 `valuepass/test/` 前缀，测试后清理
+- 本地测试图片写入 `uploads/`，测试后清理；线上 Blobs 测试文件需手动清理
 
 ### 4.3 数据隔离
 
@@ -88,7 +89,7 @@
 - E2E 的 Next.js 服务进程被强制注入 `DATABASE_URL=TEST_DATABASE_URL`（`playwright.config.ts`），杜绝误写开发/生产库
 - 不在生产环境执行创建、删除、禁用、重置密码等写操作
 - 自动化测试不得使用真实用户数据
-- 测试产生的 Blob 文件与数据库记录需可识别并清理
+- 测试产生的图片文件与数据库记录需可识别并清理
 
 ## 5. 用例编号与优先级
 
@@ -327,7 +328,7 @@
 
 - 前置：存在上架商品
 - 步骤：`/products` → 点击商品 → 详情页 → 点击「微信咨询这件作品」
-- 预期：详情含名称、描述、图片；弹窗展示二维码图片、微信号 `dxl20061110`、`复制` 按钮；Esc 可关闭；弹窗为 `role=dialog`
+- 预期：详情含名称、描述、图片；弹窗展示二维码图片、微信号 `aaa1024-__-`、`复制` 按钮；Esc 可关闭；弹窗为 `role=dialog`
 - 自动化：`tests/e2e/publish-flow.spec.ts`
 
 #### PROD-002 下架商品旧链接（P0）
@@ -418,35 +419,51 @@
 
 ### 7.7 图片上传（UP）
 
+> 实现变更（2026-11-09）：上传由 Vercel Blob 客户端直传改为 Server Action `uploadImageAction` + 存储层抽象（生产 Netlify Blobs / 本地 uploads/）。
+
 #### UP-001 类型校验（P1）
 
 - 步骤：上传 JPG/PNG/WebP 与非图片
-- 预期：三种图片成功；非图片客户端提示「仅支持 JPG/PNG/WebP 图片」，服务端令牌接口返回 `UPLOAD_TYPE_INVALID`
-- 自动化：手工（Preview，需有效 Blob Token）
+- 预期：三种图片成功；非图片客户端提示「仅支持 JPG/PNG/WebP 图片」，服务端返回「仅支持 JPG/PNG/WebP」
+- 自动化：手工（本地 / 线上预览各验证一次）
 
 #### UP-002 大小限制（P1）
 
 - 步骤：上传超过 5MB 的图片
-- 预期：客户端提示「图片不能超过 5MB」；服务端令牌接口 `maximumSizeInBytes` 限制兜底
-- 自动化：手工（Preview）
+- 预期：客户端提示「图片不能超过 5MB」；服务端二次校验兜底
+- 自动化：手工
 
 #### UP-003 未登录上传被拒（P0）
 
-- 步骤：无会话直接 `POST /api/blob-upload`
-- 预期：401 + `{ error: { code: 'UNAUTHORIZED' } }`
-- 自动化：`tests/e2e/security.spec.ts`
+- 步骤：无会话调用 `uploadImageAction`
+- 预期：返回 `{ ok: false, error: '请先登录' }`
+- 自动化：手工（Server Action 无法直接 HTTP 调用）；接口层由 `getCurrentUser` 统一守卫
+- 备注：`tests/e2e/security.spec.ts` 中针对旧 `/api/blob-upload` 的用例需同步迁移或移除
 
 #### UP-004 上传失败保留表单（P2）
 
 - 步骤：上传失败后检查表单其他字段
 - 预期：表单内容不丢失，可重试
-- 自动化：手工（Preview）
+- 自动化：手工
 
-#### UP-005 Blob 路径约定（P2）
+#### UP-005 存储路径与读取（P2）
 
-- 预期：路径形如 `valuepass/{kind}/{yyyy}/{随机}.{ext}`，不信任原始文件名
-- 自动化：手工（Preview 上传后在 Vercel Blob 控制台核对）
+- 预期：上传后返回 `/api/images/<timestamp>-<random>.<ext>`；不信任原始文件名
+- 预期：`GET /api/images/<filename>` 返回正确 `Content-Type` 与 `Cache-Control: public, max-age=31536000, immutable`
+- 预期：含 `/`、`\`、`..` 的文件名被拒绝（404）
+- 自动化：手工 + `tests/unit/markdown-media.test.tsx`（渲染侧覆盖）
 
+#### UP-006 持久化（P0，上线关键）
+
+- 步骤：线上后台上传图片 → 记录 URL → 重新部署一次 → 再次访问该 URL
+- 预期：图片仍可访问（Netlify Blobs 持久化）
+- 自动化：手工（已验证通过：2026-11-09，重新部署后图片 200）
+
+#### UP-007 Markdown 图片与视频（P1）
+
+- 步骤：文章正文写入 `![图](/api/images/x.png)` 与 `<iframe src="https://player.bilibili.com/...">`
+- 预期：图片正常渲染；白名单 iframe 渲染为 16:9 容器；非白名单地址显示「[不支持的视频嵌入地址]」
+- 自动化：`tests/unit/markdown-content.test.tsx`、`tests/unit/markdown-media.test.tsx`
 ### 7.8 SEO（SEO）
 
 #### SEO-001 页面元信息（P0）
@@ -675,8 +692,8 @@ npm run build         # 生产构建
 
 | 风险 | 应对 |
 |------|------|
-| 测试环境与生产环境差异 | 使用 Vercel Preview 做验收，生产只做冒烟 |
-| Vercel Blob 测试产生垃圾文件 | 使用 `valuepass/test/` 前缀并定期清理 |
+| 测试环境与生产环境差异 | 使用 Netlify Deploy Preview 做验收，生产只做冒烟 |
+| 线上 Blobs 测试产生垃圾文件 | 测试文件名带时间戳，定期清理 |
 | 百度统计需要真实域名 | Preview/生产环境验证，Local 只验证事件调用 |
 | 单人开发导致测试被跳过 | 将测试列入完成定义（Definition of Done） |
 | 数据库测试污染生产 | E2E 强制 `DATABASE_URL=TEST_DATABASE_URL`；禁止生产库执行写用例 |

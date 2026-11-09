@@ -87,13 +87,13 @@ export function MobileNav() {
           })}
           <div className="my-2 border-t border-line" />
           {user ? (
-            <div className="flex items-center justify-between rounded-md px-4 py-3">
-              <span className="min-w-0 truncate text-[15px] text-ink">{user.username}</span>
+            <div className="flex flex-col gap-1 rounded-md px-4 py-3">
+              <span className="truncate text-[15px] font-medium text-ink">{user.username}</span>
               <button
                 type="button"
                 onClick={handleLogout}
                 disabled={logoutPending}
-                className="shrink-0 text-[14px] text-muted hover:text-ink disabled:opacity-60"
+                className="self-start text-[13px] text-muted hover:text-ink disabled:opacity-60"
               >
                 退出登录
               </button>

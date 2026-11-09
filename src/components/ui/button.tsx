@@ -2,7 +2,7 @@ export type ButtonVariant = 'primary' | 'secondary' | 'light' | 'ghost' | 'dange
 export type ButtonSize = 'md' | 'sm';
 
 const base =
-  'inline-flex items-center justify-center gap-2 rounded-md border font-semibold transition-colors duration-200 ease-out';
+  'inline-flex items-center justify-center gap-2 rounded-md border font-semibold spring-press glow-hover';
 
 const variants: Record<ButtonVariant, string> = {
   primary: 'border-brand bg-brand text-white hover:border-brand-dark hover:bg-brand-dark',

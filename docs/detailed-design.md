@@ -1,7 +1,7 @@
 # ValuePass 详细设计
 
-> 状态：**已确认（v1.0）**
-> 版本：v1.0　日期：2026-11-05
+> 状态：**已实现（v1.1）**
+> 版本：v1.1　更新日期：2026-11-09
 > 依据：PRD v1.1、概要设计 v1.0、已确认原型 v1
 > 说明：本文档定义实现细节，是开发的直接依据；业务代码不在本文档中实现。
 >
@@ -14,7 +14,7 @@
 | v0.1 | 2026-11-05 | 草案 | 详细设计初稿 |
 | v0.2 | 2026-11-05 | 自审修订 | 修复 14 项自审问题 |
 | v1.0 | 2026-11-05 | 已确认 | 用户审核通过；项目目录结构确认 |
-
+| v1.1 | 2026-11-09 | 已实现 | 部署改为 Netlify + Blobs；上传改为 Server Action + 存储抽象；Markdown 支持图片与白名单视频；新增氛围背景、微交互、页面过渡、移动端目录 |
 ## 1. 设计范围
 
 本文档覆盖：
@@ -84,10 +84,30 @@ Tailwind 容器实现约定：
 
 ### 2.4 圆角、阴影、动效
 
-- 圆角：按钮/输入框 6px，卡片 9px，弹窗 12px，图标容器 10~20px
+- 圆角：按钮/输入框 6px，卡片 9px，大区块卡片 20px，弹窗 12px，图标容器 10~20px
 - 阴影：仅用于浮层与弹窗，卡片默认只描边，不用重阴影
 - 动效：150~250ms，`ease-out`；`prefers-reduced-motion` 下关闭
 
+**微交互（Tactile Feedback）**
+
+| 类名 | 效果 | 应用位置 |
+|------|------|----------|
+| `.spring-press` | 按下 `scale(0.97)`，松开经 `cubic-bezier(0.34,1.56,0.64,1)` 弹簧回弹 | 全站按钮、后台侧栏导航项 |
+| `.glow-hover` | 悬停时伪元素径向光晕淡入（品牌蓝 12% 透明度） | 全站按钮、首页四板块卡片、工具卡、商品卡 |
+
+仅动画 `transform` / `opacity`，走 GPU 合成层，不触发重排。
+
+**氛围背景（Ambient）**
+
+| 类名 | 说明 |
+|------|------|
+| `.ambient-blob-*` | 首页 Hero 大号模糊极光光斑（品牌蓝 + 浅青蓝 + 靛紫），22~30s 缓慢漂移呼吸 |
+| `.intro-blob-*` | 板块页头紧凑版光斑（更小更淡，适配矮区域） |
+| `.hero-enter` | 首屏内容依次淡入上移（0.6s，延迟 0.08/0.16/0.24s） |
+| `.page-enter` | 路由切换时页面淡入上浮（0.25s），由 `PageTransition` 按 pathname 重放 |
+
+- 首页 Hero 通过 `HeroAmbient` 组件实现鼠标微弱视差（±14px，0.7s 缓动）；触屏设备与 `prefers-reduced-motion` 自动关闭
+- 所有动画在 `prefers-reduced-motion: reduce` 下禁用
 ### 2.5 基础组件
 
 | 组件 | 变体 |
@@ -129,7 +149,7 @@ Tailwind 容器实现约定：
 | `/studio/products` | 商品管理 | ADMIN | 动态 | 全状态商品 |
 | `/studio/featured` | 精选管理 | ADMIN | 动态 | 已发布内容 |
 | `/studio/users` | 用户管理 | ADMIN | 动态 | 用户列表 |
-| `/api/blob-upload` | Blob 客户端直传令牌 | ADMIN | Route Handler | Vercel Blob |
+| `/api/images/[filename]` | 图片读取代理 | 公开 | Route Handler | Blobs / 本地文件 |
 | `/api/auth/me` | 当前登录用户 | 公开 | Route Handler（no-store） | Session |
 | `/sitemap.xml` | 站点地图 | 公开 | 动态 | 静态页 + 已发布内容 |
 | `/robots.txt` | 爬虫规则 | 公开 | 静态 | — |
@@ -143,9 +163,9 @@ Tailwind 容器实现约定：
 - `/studio`、`/login`、`/register` 统一 `noindex`
 - 公开页不在服务端读取 Cookie；Header 登录态由客户端组件 `HeaderAuth` 调 `/api/auth/me` 获取，避免公开页全部变为动态渲染
 
-**数据库连接（Vercel Postgres）**
+**数据库连接（Neon PostgreSQL）**
 
-- 使用 Vercel Postgres 的池化连接字符串（pooled connection）
+- 使用 Neon PostgreSQL 的池化连接字符串（pooled connection）
 - `postgres` 客户端做成模块级单例，连接上限保持较小（max 1~3），适配 Serverless 实例复用
 - 禁止每次请求新建连接池
 - 迁移命令使用直连/专用连接串，不经过运行时连接池
@@ -380,28 +400,42 @@ Tailwind 容器实现约定：
 | `setUserStatusAction` | userId, status | 不允许操作自己 |
 | `resetUserPasswordAction` | userId, newPassword | 校验强度，删除该用户全部 Session |
 
-### 6.6 图片上传（Vercel Blob 客户端直传）
+### 6.6 图片上传（Netlify Blobs）
 
-Vercel Functions 请求体上限约 4.5MB，低于 PRD 的 5MB 图片上限，因此**不通过 Server Action 或普通 Route Handler 传文件**，采用 Vercel Blob 客户端直传：
+生产部署在 Netlify，图片存储使用 **Netlify Blobs**；本地开发回退到项目根目录 `uploads/`。
 
-1. 浏览器调用 `upload()`（`@vercel/blob/client`）
-2. 请求 `/api/blob-upload` 生成上传令牌
-3. 令牌接口校验：ADMIN Session、`kind`、`contentType`、`size ≤ 5MB`
-4. 浏览器直传 Vercel Blob，服务端不接收文件字节
-5. 返回公开 URL，表单保存该 URL
+**上传流程**
 
-`POST /api/blob-upload` 契约：
+1. 前端调用 Server Action `uploadImageAction(formData)`（`src/lib/actions/upload.ts`）
+2. 校验：ADMIN Session、`image/jpeg|png|webp`、`size ≤ 5MB`
+3. 生成唯一文件名 `<timestamp>-<随机8位>.<ext>`
+4. 调用存储层 `saveImage(filename, buffer)`（`src/lib/storage/images.ts`）
+   - `NETLIFY=true` 或存在 `NETLIFY_BLOBS_CONTEXT` → 写入 Blobs（store: `valuepass-images`）
+   - 否则 → 写入本地 `uploads/` 目录
+5. 返回路径 `/api/images/<filename>`，表单保存该路径
 
-- 鉴权：ADMIN Session
-- 请求：由 `handleUpload` 约定，包含 `pathname`、`contentType`、`size`、`kind`
-- 允许类型：`image/jpeg`、`image/png`、`image/webp`
-- 允许大小：≤ 5MB
-- 路径：`valuepass/{kind}/{yyyy}/{random}.{ext}`
-- 失败：`UNAUTHORIZED`、`UPLOAD_TOO_LARGE`、`UPLOAD_TYPE_INVALID`
-- 令牌生成与上传回调均校验管理员身份
+**读取流程**
 
-> 备选：若后续把上限降到 4MB，可改回普通 Route Handler；v1 按 5MB 需求使用直传。
+- 图片统一通过 `GET /api/images/[filename]` 代理读取
+  - 生产：`store.get(filename)` 从 Blobs 读取
+  - 本地：读 `uploads/<filename>`
+- 响应头：`Content-Type` 按扩展名推断，`Cache-Control: public, max-age=31536000, immutable`
+- 防路径穿越：拒绝含 `/`、`\`、`..` 的文件名
 
+**为什么走 Server Action 而不是 Route Handler**
+
+Next.js 15 的 Route Handler 在处理 `multipart/form-data` 上传时存在兼容问题（返回 500），Server Action 是官方推荐的文件上传通道，与项目其他写操作保持一致。
+
+**为什么图片 URL 不是 CDN 直链**
+
+Netlify Blobs 不提供公开直链，必须经站点 API 代理。该设计使存储后端可替换（换七牛/Cloudinary 只改 `storage/images.ts` 一个文件），且历史文章中的图片路径无需迁移。
+
+**约束**
+
+- 单张 ≤ 5MB，仅 JPG/PNG/WebP
+- 替换图片不自动删除旧文件（v1 保留）
+- `uploads/` 已加入 `.gitignore`，不进入仓库
+- 已验证：生产上传 → 重新部署 → 图片仍可访问（Blobs 持久化）
 ### 6.7 公开数据函数
 
 `lib/data/*` 中提供：
@@ -443,65 +477,73 @@ Route Handler 使用标准 HTTP 状态码 + `{ error: { code, message } }`。
 - Logo 37px（桌面）/ 34px（手机），链接首页
 - 导航：首页 / AI全栈 / AI工具 / 经验分享 / 商品 / 关于我
 - 右侧：未登录显示“登录 / 注册”；已登录显示用户名 + 退出
-- 已登录状态由客户端组件 `HeaderAuth` 调用 `/api/auth/me` 获取；服务端不读取 Cookie，保证公开页可静态化
+- 已登录状态由共享 Hook `useCurrentUser`（客户端）调用 `/api/auth/me` 获取；服务端不读取 Cookie，保证公开页可静态化
 - 首屏先渲染“登录 / 注册”占位，读取完成后按需切换；预留固定宽度避免布局跳动
-- 移动端：汉堡菜单，展开下拉导航；Esc 关闭；焦点管理
-- Footer：品牌、三个快捷链接、版权、`LESS HYPE. MORE BUILDING.`
+- Footer：品牌、三个快捷链接、版权
+- 公开页面统一包裹在 `PageTransition` 中：路由变化时按 `pathname` 重放 `.page-enter` 淡入上浮动画（0.25s）
 
+**移动端导航（抽屉式）**
+
+- 汉堡按钮（三横线 → ✕ 形变）打开左侧抽屉，宽 260px，0.3s 滑入
+- 遮罩层半透明，点击遮罩 / ✕ / Esc 均可关闭；跳转后自动收起
+- 抽屉底部显示登录态：已登录为**上下两行**（用户名一行、退出登录一行）；未登录为「登录 / 注册 ↗」
+- 当前所在页菜单项高亮（浅灰底 + 品牌蓝文字）
 ### 7.2 首页
 
 模块顺序：
 
-1. Hero：标题 + 简介 + 两个 CTA + 架构插图 + 底部说明条
-2. 四板块入口：AI 全栈 / AI 工具 / 经验分享 / 我的商品（编号 01~04）
-3. 精选内容：1 大 + 3 小；后台手动精选；首页最多展示排序前 4 条；无精选时展示最新 4 篇文章
-4. 深色工具区：通栏背景，内容遵守版心；三条工具入口
-5. 商品高亮区：商品封面 + 文案 + “看看我的商品”
-6. 品牌格言区
+1. **Hero**：主标题「把 AI 产品 / 从想法做到上线，/ 每一步都能跟着做。」+ 站长自述 + 「开始阅读」「认识一下我」两个 CTA + `Journey Map` 插图
+   - 背景：极光光斑氛围层（`HeroAmbient`）+ 鼠标微弱视差 + 顶部微蓝渐变
+   - 首屏内容依次淡入上浮（`hero-enter` 系列类）
+2. **四板块入口**：AI 全栈 / AI 工具 / 经验分享 / 我的商品，卡片带悬停上浮 + 光晕 + 边框提亮
+3. **精选内容**：1 大 + 3 小；后台手动精选；最多 4 条；无精选时展示空状态
+4. **工具区**：浅蓝渐变圆角卡片（非通栏），展示最新 3 个工具 + 「逛逛我的工具箱」
+5. **商品高亮区**：品牌光效图 + 「用最实用的产品创造更高的价值」+ 「看看我的商品」
+6. **品牌格言区**：「持续构建，真诚分享，让价值流动。」
 7. Footer
 
-SEO：`ValuePass｜让想法，长成有价值的产品`
-状态：精选为空 → 最新 4 篇；数据库异常 → 错误边界（500）。
-
+SEO：`ValuePass｜把 AI 产品从想法做到上线`
+状态：精选为空 → 空状态占位；数据库异常 → 错误边界（500）。
 ### 7.3 文章列表（AI 全栈 / 经验分享）
 
-- 页面 intro：eyebrow、H1、说明、数量/提示
+- 页头仅 H1（AI 全栈：「软件工程师的实战分享」；经验分享：「人生经验，AI+X 经验分享」）+ 极光氛围层；无描述与英文装饰行
 - 列表行：封面 220px + 标题/摘要/元信息 + 箭头
-- 桌面三列行布局；手机图片在上、文字在下
+- 桌面行布局；手机图片在上、文字在下
 - 空状态：`内容筹备中` + 返回首页按钮
 - 无分页（v1）；超过 50 条时后续迭代加载更多
 - 点击整行进详情
-
+- 标题导航命名：`/articles` → AI 全栈；`/insights` → 经验分享
 ### 7.4 文章详情
 
 - 面包屑：首页 / 板块 / 文章
 - 标题（H1）、摘要、发布时间、阅读时长
 - 阅读时长 = `max(1, ceil(去除 Markdown 标记后的正文字符数 / 400))` 分钟
 - 发布时间统一按 Asia/Shanghai 显示为 `YYYY.MM.DD`；数据库存 UTC
-- 封面为空时使用默认封面 `/images/default-article-cover.svg`（开发时创建）
+- 封面为空时使用默认封面 `/images/default-article-cover.svg`
 - 正文最大宽度 760px，行高 2.1
-- 桌面右侧目录（H2/H3），滚动高亮
-- 正文支持：段落、H2/H3、列表、引用、代码块、行内代码、链接、分隔线
-- 禁止：原始 HTML、H1、脚本、iframe
-- 文末：返回列表 + 下一篇引导
+- **桌面端**：右侧 230px 粘性目录（H2/H3），滚动高亮
+- **移动端**：左下角浮动「☰ 目录」按钮 + 底部弹出抽屉
+  - 抽屉最大高度 70vh，圆角顶部，0.3s 滑入
+  - 点击标题跳转并自动收起；遮罩 / ✕ / Esc 关闭
+  - 因父级存在 `transform` 会破坏 `fixed` 定位，组件通过 `createPortal` 挂载到 `body`
+- 正文支持：段落、H2/H3、列表、引用、代码块、行内代码、链接、分隔线、图片、白名单视频 iframe
+- 文末：返回列表 + 和我聊聊
 - 草稿/不存在：404
 - SEO：title = 文章标题｜ValuePass；description = 摘要；OG 图 = 封面/默认图；Article JSON-LD
-
 ### 7.5 工具列表
 
-- 三列（桌面）/ 两列（平板）/ 单列（手机）
-- 卡片：插画/图片、名称、功能摘要、“看看我的使用方式”
+- 页头：仅 H1「称手的工具，让创造更自然。」+ 极光氛围层，无描述与装饰行
+- 双列网格（桌面）/ 单列（手机）
+- 卡片为**左文右图**横版布局：左侧 2/3 为工具名 + 摘要（最多 3 行）+「看看我的使用方式」；右侧 1/3 为工具图片
 - 暂无工具：空状态
-- 点击图片或卡片进详情
-
+- 点击整卡进详情
 ### 7.6 工具详情
 
 - 头部：图标/图片 + 名称 + 功能摘要
-- 正文：介绍 + 使用建议（Markdown 或纯文本）
+- 正文：`MarkdownContent` 渲染（支持图片与白名单视频 iframe）
 - 侧栏：前往官网按钮（新窗口，`rel=noopener noreferrer`）
 - 点击官网按钮触发百度统计事件
 - 草稿：404
-
 ### 7.7 商品列表
 
 - 三列 / 两列 / 单列
@@ -513,33 +555,33 @@ SEO：`ValuePass｜让想法，长成有价值的产品`
 
 - 商品图片 1~8 张，第一张为主图；无图片时禁止保存
 - 左：主图 + 缩略图切换
-- 右：名称、描述、特点列表、`微信咨询这件作品` 按钮
+- 右：名称、**Markdown 描述**（支持图片/视频）、`微信咨询这件作品` 按钮
 - 点击按钮打开微信二维码弹窗：
   - 显示真实二维码 `/contact/wechat-qr.png`
-  - 显示微信号 `dxl20061110`
+  - 显示微信号（当前 `aaa1024-__-`，由 `lib/site-content.ts` 统一维护）
   - 复制微信号按钮
   - 点击遮罩/关闭/Esc 关闭
   - 打开时触发百度统计事件
-- 已下架：显示“该商品已下架” + 其他商品推荐；`noindex`
+  - 弹窗内不显示「本站不直接售卖」类说明
+- 已下架：显示「该商品已下架」+ 其他商品推荐；`noindex`
 - SEO：title、description、OG 图
-
 ### 7.9 关于我
 
-- H1 品牌宣言
-- “为什么叫 ValuePass” + “我坚持的几件事”
-- 联系方式区：微信号 `dxl20061110`、真实二维码、复制按钮
+- Hero：H1「软件工程的思想，/ 比任何时候都重要。」+ 站长自述；带极光氛围层与标题/副文案依次入场
+- 「为什么做这个网站」：四段说明（古法编程 → AI Coding、基本功更值钱、聚合技术大佬沉淀 + 个人工程积累、ValuePass 命名含义）
+- 联系方式区：微信号 `aaa1024-__-`、真实二维码、复制按钮
 - 内容由 `lib/site-content.ts` 维护（v1 不做后台编辑）
-
 ### 7.10 登录 / 注册
 
 - 两个独立页面，共享表单组件
-- 登录：账号、密码、登录按钮、注册链接、“忘记密码请联系站长”
-- 注册：账号、密码、确认密码、注册按钮、登录链接
+- **表单置于白色圆角卡片内**（12px 圆角 + 细边框 + 品牌柔和投影），「返回首页继续浏览」链接位于卡片外下方
+- 登录：账号、密码、登录按钮、注册链接、「忘记密码请联系站长」
+- 注册：账号、密码、确认密码、注册按钮、登录链接（仅 H1「创建账号」，无副标题）
+- 两页均不显示「第一版无额外权益」类提示
 - 已登录访问 `/login`、`/register` → 跳首页
 - 校验错误字段级展示；服务端错误统一提示
 - 成功后：登录跳 `redirectTo` 或首页；注册自动登录并跳首页
 - 提交中禁用按钮并显示 loading
-
 ### 7.11 Studio 后台
 
 **登录页 `/studio`**
@@ -637,27 +679,30 @@ SEO：`ValuePass｜让想法，长成有价值的产品`
 
 ### 9.1 Markdown
 
-- 存储原始 Markdown（`content_md`）
-- 服务端渲染：`react-markdown` + `remark-gfm` + `rehype-sanitize` + `rehype-highlight`
-- 处理顺序：先 `rehype-sanitize` 清洗，再 `rehype-highlight` 高亮；sanitize schema 需允许代码高亮所需的 `className`，否则高亮样式会被清除
-- 禁用原始 HTML
-- 允许标签：h2、h3、p、ul、ol、li、blockquote、pre、code、a、strong、em、hr、img（仅 https）
+- 存储原始 Markdown（`content_md` / `description`）
+- 服务端渲染：`react-markdown` + `remark-gfm` + `rehype-raw` + `rehype-sanitize` + `rehype-highlight`
+- 处理顺序：`rehype-raw`（解析原始 HTML）→ `rehype-sanitize`（白名单清洗）→ `rehype-highlight`（代码高亮）
+- sanitize schema 允许代码高亮所需的 `className`
+- **图片**：允许 `https://` 绝对地址与 `/` 开头的站内路径；`http://` 被剥除
+- **视频嵌入**：允许 `<iframe>`，但 src 域名必须在白名单内（`player.bilibili.com`、`v.qq.com`、`www.youtube.com`、`www.youtube-nocookie.com`）；非白名单渲染为「[不支持的视频嵌入地址]」
+- iframe 统一包裹在 `.video-embed` 容器中，CSS 实现 16:9 响应式
 - 外部链接统一 `target=_blank` + `rel=noopener noreferrer`
 - 代码块支持常用语言高亮
 - 正文 H1 不使用，页面标题单独渲染
+- 文章、工具、商品三处正文均使用同一 `MarkdownContent` 组件渲染
 
 ### 9.2 上传
 
 - 仅管理端可用
-- 采用 Vercel Blob 客户端直传（见 6.6），避免 Vercel Functions 4.5MB 请求体限制
+- 采用 Server Action `uploadImageAction`（见 6.6），存储层按环境自动选择 Netlify Blobs / 本地 `uploads/`
 - 支持 jpeg / png / webp
 - 最大 5MB
-- 令牌接口校验 MIME、大小与管理员身份
+- 服务端校验 MIME、大小与管理员身份
 - 随机文件名，不信任原始文件名
-- 上传成功返回 Blob URL
-- 替换图片不自动删除旧 Blob（v1 保留，后续做清理任务）
+- 上传成功返回 `/api/images/<filename>`
+- 替换图片不自动删除旧文件（v1 保留，后续做清理任务）
 - 失败提示明确原因并保留表单
-
+- 编辑器提供「插图」「嵌入视频」按钮（文章 / 工具 / 商品三处编辑器一致）
 ## 10. SEO 与统计
 
 ### 10.1 SEO
@@ -667,7 +712,7 @@ SEO：`ValuePass｜让想法，长成有价值的产品`
 - canonical 基于 `NEXT_PUBLIC_SITE_URL`
 - OG 图：封面或默认品牌图
 - sitemap：包含静态页（/、/articles、/tools、/insights、/products、/about）+ 已发布文章、工具、上架商品
-- 图片使用 `next/image`，在 `next.config.ts` 配置 Vercel Blob 远程域名白名单（`*.public.blob.vercel-storage.com`）
+- 图片通过 `/api/images/[filename]` 路由代理读取（Blobs / 本地文件），不走 `next/image` 远程域名白名单
 - 默认 OG 图：`/images/og-default.png`（开发时创建）
 - robots 屏蔽 `/studio`、`/api`、`/login`、`/register`
 - 文章详情输出 Article JSON-LD
@@ -722,7 +767,7 @@ trackEvent('Tool', 'visit_website', slug)
 | 1 发布文章可见 | studio 登录 → 新建文章 → 发布 → 前台列表/详情可见 |
 | 2 首页精选 | 勾选精选 → 首页出现；取消 → 消失 |
 | 3 工具详情 | 工具列表 → 详情 → 官网按钮新窗口 |
-| 4 商品咨询 | 商品详情 → 打开二维码弹窗 → 展示微信号 dxl20061110 |
+| 4 商品咨询 | 商品详情 → 打开二维码弹窗 → 展示微信号 aaa1024-__- |
 | 5 已下架商品 | 下架后访问详情 → 显示已下架 + 推荐 |
 | 6 注册冲突 | 重复用户名 → 明确提示 |
 | 7 登录锁定 | 连续 5 次失败 → 锁定 15 分钟提示 |
@@ -754,15 +799,16 @@ trackEvent('Tool', 'visit_website', slug)
 
 ```
 DATABASE_URL=
-BLOB_READ_WRITE_TOKEN=
-SESSION_SECRET=
 NEXT_PUBLIC_SITE_URL=
 BAIDU_ANALYTICS_ID=
 ADMIN_USERNAME=
 ADMIN_PASSWORD=
 ```
 
-`.env.example` 只写 key，不写真实值；`.env*` 不提交。
+- Netlify Blobs 无需环境变量：部署到 Netlify 后平台自动注入凭据，代码通过 `NETLIFY` / `NETLIFY_BLOBS_CONTEXT` 自动识别。
+- 本地开发时图片写入 `uploads/`（已加入 `.gitignore`）。
+- `.env.example` 只写 key，不写真实值；`.env*` 不提交。
+- 已废弃：`BLOB_READ_WRITE_TOKEN`（Vercel Blob）、`SESSION_SECRET`（代码未使用）、`QINIU_*`（七牛方案已弃用）。
 
 ### 14.2 命令
 
@@ -786,7 +832,7 @@ npm run db:seed:admin  # 创建管理员
 5. 后台：文章/工具/商品 CRUD、Markdown 编辑器、图片上传
 6. 精选管理、用户管理、缓存刷新
 7. SEO、百度统计、错误页、空状态
-8. E2E/单元测试、Lighthouse、Vercel 部署
+8. E2E/单元测试、Lighthouse、Netlify 部署
 9. 内容填充与软上线
 
 ## 16. 假设与已确认事项
@@ -796,7 +842,7 @@ npm run db:seed:admin  # 创建管理员
 3. 工具状态采用 DRAFT / PUBLISHED（PRD 未明确，按文章一致处理）。
 4. 商品图片顺序通过 `sort_order` 控制，后台支持上移/下移。
 5. 管理员只有一个，通过种子脚本创建。
-6. 微信号 `dxl20061110`、二维码 `brand/contact/wechat-qr.png` 已提供；开发时复制到 `public/contact/wechat-qr.png`。
+6. 微信号 `aaa1024-__-`（统一维护于 `lib/site-content.ts`）、二维码 `public/contact/wechat-qr.png` 已就绪。
 7. slug 留空时自动生成 `article-{8位随机串}` / `tool-{8位随机串}` / `product-{8位随机串}`；手动填写必须是 `[a-z0-9-]`，重复则提示修改。
 8. 文章“撤回发布”只改状态为 DRAFT，保留原 `published_at`；重新发布不覆盖原发布时间。
 9. 站内搜索为 P1，v1 不实现、不预留路由。
@@ -819,14 +865,14 @@ npm run db:seed:admin  # 创建管理员
 | # | 自审发现 | 级别 | 处理 |
 |---|----------|------|------|
 | 1 | 公开页若由 Server Component 读取 Cookie 判断登录态，会导致所有页面变为动态渲染，与“静态生成 + revalidate”冲突 | P1 | 增加 `HeaderAuth` 客户端组件 + `/api/auth/me`，公开页不读 Cookie |
-| 2 | Vercel Functions 请求体上限约 4.5MB，普通上传接口无法承接 5MB 图片 | P1 | 改为 Vercel Blob 客户端直传 + `/api/blob-upload` 令牌接口 |
-| 3 | Vercel Postgres 在 Serverless 下需要池化连接，避免连接耗尽 | P1 | 明确使用池化连接串 + 模块级单例 + max 1~3 |
+| 2 | 原方案用 Route Handler 上传，Next.js 15 下 `multipart/form-data` 解析异常（500） | P1 | 改为 Server Action `uploadImageAction` + 存储层抽象（Netlify Blobs / 本地） |
+| 3 | Serverless 环境下数据库需池化连接，避免连接耗尽 | P1 | 使用 Neon 池化连接串 + 模块级单例 + max 1~3 |
 | 4 | 文章封面为空时没有默认图规则 | P2 | 增加默认封面 `/images/default-article-cover.svg` |
 | 5 | 页面显示“阅读时长”但未定义计算方式 | P2 | 明确按 400 字/分钟计算，最少 1 分钟 |
 | 6 | 首页精选展示数量未与 1 大 + 3 小布局对齐 | P2 | 明确最多展示排序前 4 条；无精选展示最新 4 篇 |
 | 7 | 商品图片数量与主图规则未定义 | P2 | 明确 1~8 张，第一张为主图，无图禁止保存 |
 | 8 | sitemap 未包含静态列表页 | P2 | 补充 6 个静态页面 + 动态详情页 |
-| 9 | `next/image` 未配置 Vercel Blob 远程域名 | P2 | 增加 remotePatterns 白名单 |
+| 9 | 图片存储曾绑定 Vercel Blob，无法迁移平台 | P2 | 抽象 `lib/storage/images.ts`，生产用 Netlify Blobs、本地用 uploads/ |
 | 10 | Markdown 清洗与代码高亮的顺序未明确 | P2 | 明确 sanitize 后高亮或配置 schema 允许 className，禁止原始 HTML |
 | 11 | slug 自动生成与重复处理未定义 | P2 | 增加 8 位随机后缀规则与手动 slug 校验 |
 | 12 | 撤回发布后 `published_at` 的处理未定义 | P2 | 撤回保留原发布时间，重新发布不覆盖 |
@@ -917,7 +963,7 @@ ValueChange/
 │  │  │
 │  │  └─ api/
 │  │     ├─ auth/me/route.ts        # HeaderAuth 获取登录态
-│  │     └─ blob-upload/route.ts    # Vercel Blob 直传令牌
+│  │     └─ images/[filename]/route.ts  # 图片读取代理
 │  │
 │  ├─ components/
 │  │  ├─ ui/                        # Button、Input、Modal、Toast、Container 等
@@ -932,7 +978,7 @@ ValueChange/
 │  │  ├─ actions/                   # Server Actions
 │  │  ├─ data/                      # 公开数据查询
 │  │  ├─ validation/                # Zod Schema
-│  │  ├─ upload/                    # Vercel Blob 上传
+│  │  ├─ storage/images.ts          # 图片存储抽象（Blobs / 本地）
 │  │  ├─ utils/                     # slug、摘要、阅读时长、日期、结果
 │  │  ├─ analytics.ts
 │  │  ├─ seo.ts
@@ -995,7 +1041,7 @@ ValueChange/
 4. 路由组 `(site)`、`(auth)`、`(panel)` 不改变 URL，只用于布局隔离。
 5. `/studio` 登录页独立；登录后 `(panel)` 才加载后台侧栏与管理员鉴权。
 6. 公开页不在服务端读取 Cookie；登录态统一由 `HeaderAuth` 调 `/api/auth/me`。
-7. 图片上传只保留 `/api/blob-upload`，不新增普通文件上传接口。
+7. 图片上传统一走 Server Action `uploadImageAction` + `lib/storage/images.ts`，不新增普通文件上传接口。
 8. 重要架构或接口变更，先更新 `docs/` 文档，再改代码。
 
 ## 20. 文档与代码边界

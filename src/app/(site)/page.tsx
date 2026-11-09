@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Container } from '@/components/ui/container';
 import { SmartImage } from '@/components/ui/smart-image';
 import { buttonStyles } from '@/components/ui/button';
+import { HeroAmbient } from '@/components/content/hero-ambient';
 import { getHomeData } from '@/lib/data/home';
 import { getLatestTools } from '@/lib/data/tools';
 import { formatDate } from '@/lib/utils/date';
@@ -41,21 +42,22 @@ export default async function HomePage() {
   return (
     <main id="main">
       {/* 1. Hero */}
-      <section className="bg-gradient-to-b from-[rgba(239,246,255,0.6)] to-transparent">
-        <Container className="pb-[68px] pt-[50px] lg:pt-[77px]">
+      <section className="relative overflow-hidden bg-gradient-to-b from-[rgba(239,246,255,0.6)] to-transparent">
+        <HeroAmbient />
+        <Container className="relative pb-[68px] pt-[50px] lg:pt-[77px]">
           <div className="grid items-center gap-12 lg:grid-cols-[1.04fr_0.96fr] lg:gap-[72px]">
             <div>
-              <h1 className="my-6 text-[40px] font-bold leading-[1.27] tracking-[-2.5px] lg:text-[62px]">
+              <h1 className="my-6 text-[40px] font-bold leading-[1.27] tracking-[-2.5px] lg:text-[62px] hero-enter">
                 把 AI 产品
                 <br />
                 从想法做到上线，
                 <br />
                 每一步都能<span className="text-brand">跟着做。</span>
               </h1>
-              <p className="max-w-[455px] text-[15px] leading-[2] text-[#657186] lg:text-[16px]">
+              <p className="max-w-[455px] text-[15px] leading-[2] text-[#657186] lg:text-[16px] hero-enter hero-enter-d1">
                 大家好，我是游标卡尺，一个专注于技术提升和分享的博主，正在用 AI 全栈技术做真实的产品。这里记录全过程：技术怎么选、坑怎么踩、什么工具好用——新手能跟着入门，同行能对答案。
               </p>
-              <div className="mt-[34px] flex flex-wrap items-center gap-6">
+              <div className="mt-[34px] flex flex-wrap items-center gap-6 hero-enter hero-enter-d2">
                 <Link href="/articles" className={buttonStyles()}>
                   开始阅读 <span aria-hidden="true">↗</span>
                 </Link>
@@ -64,7 +66,7 @@ export default async function HomePage() {
                 </Link>
               </div>
             </div>
-            <div className="relative py-4 pl-4">
+            <div className="relative py-4 pl-4 hero-enter hero-enter-d3">
               <div className="absolute inset-0 right-[22px] rotate-3 rounded-xl bg-[#eaf0fc]" aria-hidden="true" />
               <div className="relative overflow-hidden rounded-[10px] shadow-[0_15px_50px_rgba(35,69,135,0.06)]">
                 <SmartImage
@@ -92,7 +94,7 @@ export default async function HomePage() {
               <Link
                 key={card.href}
                 href={card.href}
-                className="group flex flex-col rounded-[9px] border border-line bg-paper p-6 transition-all duration-200 hover:-translate-y-[3px] hover:border-brand/40"
+                className="group flex flex-col rounded-[9px] border border-line bg-paper p-6 transition-all duration-200 hover:-translate-y-[3px] hover:border-brand/40 glow-hover"
               >
                 <h3 className="text-[20px] font-semibold group-hover:text-brand">{card.title}</h3>
                 <p className="mt-2 text-[12px] leading-[1.9] text-muted">{card.description}</p>
@@ -169,7 +171,7 @@ export default async function HomePage() {
       {/* 4. 工具区（通栏背景） */}
       <section aria-labelledby="tools-title">
         <Container className="py-14 lg:py-20">
-          <div className="grid gap-12 rounded-[20px] border border-line bg-soft-blue p-8 lg:grid-cols-2 lg:items-center lg:p-12">
+          <div className="grid gap-12 rounded-[20px] border border-line bg-[linear-gradient(135deg,#F3F6FB_0%,#E6EEF9_100%)] p-8 lg:grid-cols-2 lg:items-center lg:p-12">
           <div>
             <h2 id="tools-title" className="text-[25px] font-bold leading-[1.45] lg:text-[30px]">
               好工具，应该让你
@@ -189,7 +191,7 @@ export default async function HomePage() {
                 <Link
                   key={tool.id}
                   href={`/tools/${tool.slug}`}
-                  className="group flex items-center gap-4 rounded-[10px] border border-line bg-white p-5 transition-colors hover:border-brand/40"
+                  className="group flex items-center gap-4 rounded-[10px] border border-line bg-white p-5 transition-colors hover:border-brand/40 glow-hover"
                 >
                   <div className="min-w-0 flex-1">
                     <strong className="block text-[15px]">{tool.name}</strong>
@@ -213,8 +215,8 @@ export default async function HomePage() {
         <Container className="grid items-center gap-12 py-11 lg:grid-cols-2 lg:py-20">
           <div className="overflow-hidden rounded-[10px]">
             <SmartImage
-              src="/images/product-notes.svg"
-              alt="AI 全栈实战笔记数字手册封面"
+              src="/images/product-hero.png"
+              alt="ValuePass 产品展示：现代办公场景中的品牌光效"
               width={1200}
               height={760}
               className="w-full"

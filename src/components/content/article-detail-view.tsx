@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { ArticleToc } from '@/components/content/article-toc';
+import { ArticleTocMobile } from '@/components/content/article-toc-mobile';
 import { Breadcrumb } from '@/components/content/breadcrumb';
 import { MarkdownContent } from '@/components/content/markdown-content';
 import { JsonLd } from '@/components/seo/json-ld';
@@ -93,6 +94,7 @@ export function ArticleDetailView({
           </aside>
         ) : null}
       </Container>
+      <ArticleTocMobile headings={headings} />
     </>
   );
 }

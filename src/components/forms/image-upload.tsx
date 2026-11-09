@@ -1,19 +1,17 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { upload } from '@vercel/blob/client';
 
+import { uploadImageAction } from '@/lib/actions/upload';
 import { buttonStyles } from '@/components/ui/button';
 
 export function ImageUpload({
   value,
   onChange,
-  kind = 'general',
   disabled = false,
 }: {
   value: string;
   onChange: (url: string) => void;
-  kind?: string;
   disabled?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -38,13 +36,13 @@ export function ImageUpload({
     setError(null);
     setUploading(true);
     try {
-      const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
-      const pathname = `valuepass/${kind}/${new Date().getFullYear()}/${crypto.randomUUID()}.${ext}`;
-      const blob = await upload(pathname, file, {
-        access: 'public',
-        handleUploadUrl: '/api/blob-upload',
-      });
-      onChange(blob.url);
+      const formData = new FormData();
+      formData.append('file', file);
+      const result = await uploadImageAction(formData);
+      if (!result.ok) {
+        throw new Error(result.error ?? '上传失败，请重试');
+      }
+      onChange(result.url!);
     } catch (err) {
       setError(err instanceof Error ? err.message : '上传失败，请重试');
     } finally {
